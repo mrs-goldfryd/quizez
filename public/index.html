@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mrs. Goldfryd Quizzes — מערכת בחנים באנגלית</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -161,6 +163,10 @@
               <input type="text" id="student-name" class="form-control student-name-input" placeholder="הכנס/י שם מלא — למשל: דניאל כהן" required autocomplete="name" maxlength="60" oninput="updateNameGate()">
               <p class="student-name-error" id="student-name-error" role="alert" hidden></p>
               <p class="student-name-ok" id="student-name-ok" hidden>✓ השם נקלט — אפשר לענות על השאלות וללחוץ „הגש בוחן“.</p>
+              <div class="avatar-picker-label">בחר/י דמות שתופיע בלוח ההישגים:</div>
+              <div class="avatar-grid" id="avatar-grid" role="radiogroup" aria-label="בחירת דמות">
+                <!-- Populated by app.js from AVATARS -->
+              </div>
             </div>
 
             <div class="student-step-label" id="questions-step-label">שלב 2 · עונים על השאלות</div>
@@ -352,8 +358,11 @@
           </svg>
           <div class="leaderboard-title">לוח הישגים</div>
         </div>
+        <p class="leaderboard-scope" id="leaderboard-scope">מציג: כל הבחנים</p>
+        <label class="leaderboard-filter-label" for="leaderboard-quiz-filter">הצג מצטיינים לפי בוחן:</label>
+        <select id="leaderboard-quiz-filter" class="leaderboard-filter" onchange="onLeaderboardFilterChange()" aria-label="סינון לוח ההישגים לפי בוחן"></select>
 
-        <!-- Podiums -->
+        <!-- Podiums: ties share a place; names stack with their own scroll -->
         <div class="podium-grid">
           <!-- Rank 2 -->
           <div class="podium-col rank-2">
@@ -365,13 +374,8 @@
               <span class="rank-num">2</span>
             </div>
             <div class="podium-block">
-              <div class="podium-avatar">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="8" r="4" fill="#ffdfbb"/>
-                  <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" fill="#ffdfbb"/>
-                </svg>
-              </div>
-              <div class="podium-name" id="podium-2-name">—</div>
+              <div class="podium-avatars" id="podium-2-avatars"></div>
+              <div class="podium-names" id="podium-2-names"><span class="podium-name-empty">—</span></div>
             </div>
           </div>
 
@@ -385,12 +389,8 @@
               <span class="rank-num">1</span>
             </div>
             <div class="podium-block">
-              <div class="podium-avatar" style="background:#ffb834; font-weight:800; color:#1e1735; font-size:18px;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" fill="#1e1735"/>
-                </svg>
-              </div>
-              <div class="podium-name" id="podium-1-name">—</div>
+              <div class="podium-avatars" id="podium-1-avatars"></div>
+              <div class="podium-names" id="podium-1-names"><span class="podium-name-empty">—</span></div>
             </div>
           </div>
 
@@ -404,13 +404,8 @@
               <span class="rank-num">3</span>
             </div>
             <div class="podium-block">
-              <div class="podium-avatar">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="8" r="4" fill="#ffdfbb"/>
-                  <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" fill="#ffdfbb"/>
-                </svg>
-              </div>
-              <div class="podium-name" id="podium-3-name">—</div>
+              <div class="podium-avatars" id="podium-3-avatars"></div>
+              <div class="podium-names" id="podium-3-names"><span class="podium-name-empty">—</span></div>
             </div>
           </div>
         </div>

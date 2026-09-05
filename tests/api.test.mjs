@@ -96,6 +96,16 @@ test('one full name per quiz: single names rejected, duplicate full names reject
   assert.equal(retry.status, 200);
 });
 
+test('student avatar is stored when valid and dropped when invalid', async t => {
+  const { call } = setup(t);
+  const good = await call('submissions', 'POST', { studentName: 'Avatar Student', quizId: 'seed', answers: ['שלום'], avatar: 'assets/avatar-07.png' });
+  assert.equal(good.status, 201);
+  assert.equal(good.data.submission.avatar, 'assets/avatar-07.png');
+  const bad = await call('submissions', 'POST', { studentName: 'Other Student', quizId: 'seed', answers: ['שלום'], avatar: 'https://evil.example/x.png' });
+  assert.equal(bad.status, 201);
+  assert.equal(bad.data.submission.avatar, undefined);
+});
+
 test('Netlify build publishes dashboard assets and excludes old root page and answer keys', () => {
   execFileSync(process.execPath, ['scripts/build.js']);
   const html = readFileSync('dist/index.html', 'utf8');
@@ -103,8 +113,16 @@ test('Netlify build publishes dashboard assets and excludes old root page and an
   assert.ok(html.includes('id="header-admin-btn"'));
   assert.ok(html.includes('id="save-quiz-btn"'));
   assert.ok(html.includes('student-name-card'));
+  assert.ok(html.includes('id="avatar-grid"'));
+  assert.ok(html.includes('id="leaderboard-quiz-filter"'));
+  assert.ok(html.includes('id="podium-1-names"'));
+  assert.ok(html.includes('rel="icon"'));
+  assert.ok(html.includes('/favicon.png'));
   assert.ok(readFileSync('dist/app.js', 'utf8').includes('shareQuizViaWhatsApp'));
   assert.ok(readFileSync('dist/app.js', 'utf8').includes('updateNameGate'));
-  assert.deepEqual(readdirSync('dist').sort(), ['app.js', 'index.html', 'style.css']);
+  assert.ok(readFileSync('dist/app.js', 'utf8').includes('groupByScore'));
+  assert.ok(readFileSync('dist/app.js', 'utf8').includes('renderAvatarPicker'));
+  assert.deepEqual(readdirSync('dist').sort(), ['app.js', 'assets', 'favicon.png', 'index.html', 'style.css']);
+  assert.equal(readdirSync('dist/assets').filter(f => f.endsWith('.png')).length, 24);
   assert.match(readFileSync('netlify.toml', 'utf8'), /publish = "dist"/);
 });

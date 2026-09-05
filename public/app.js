@@ -36,6 +36,60 @@ function escapeHTML(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// --- STUDENT AVATAR FACES (public/assets/avatar-01.png … avatar-24.png) ---
+const AVATARS = Array.from({ length: 24 }, (_, i) => `assets/avatar-${String(i + 1).padStart(2, '0')}.png`);
+const DEFAULT_AVATAR = AVATARS[0];
+
+function isAllowedAvatar(value) {
+  return typeof value === 'string' && /^assets\/avatar-(0[1-9]|1[0-9]|2[0-4])\.png$/.test(value);
+}
+
+function avatarFor(submission) {
+  return isAllowedAvatar(submission?.avatar) ? submission.avatar : DEFAULT_AVATAR;
+}
+
+function getSelectedAvatar() {
+  try {
+    const saved = localStorage.getItem('quiz_avatar');
+    if (isAllowedAvatar(saved)) return saved;
+  } catch { /* private mode: fall through to default */ }
+  return DEFAULT_AVATAR;
+}
+
+function selectAvatar(src) {
+  if (!isAllowedAvatar(src)) return;
+  try { localStorage.setItem('quiz_avatar', src); } catch { /* ignore */ }
+  document.querySelectorAll('#avatar-grid .avatar-option').forEach(btn => {
+    const active = btn.dataset.avatar === src;
+    btn.classList.toggle('selected', active);
+    btn.setAttribute('aria-checked', active ? 'true' : 'false');
+  });
+}
+
+function renderAvatarPicker() {
+  const grid = document.getElementById('avatar-grid');
+  if (!grid) return;
+  const selected = getSelectedAvatar();
+  grid.replaceChildren();
+  AVATARS.forEach(src => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `avatar-option${src === selected ? ' selected' : ''}`;
+    btn.dataset.avatar = src;
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', src === selected ? 'true' : 'false');
+    btn.setAttribute('aria-label', `דמות ${src.match(/(\d+)\.png$/)[1]}`);
+    btn.title = `דמות ${src.match(/(\d+)\.png$/)[1]}`;
+    const img = document.createElement('img');
+    img.src = `/${src}`;
+    img.alt = '';
+    img.loading = 'lazy';
+    btn.appendChild(img);
+    btn.addEventListener('click', () => selectAvatar(src));
+    grid.appendChild(btn);
+  });
+}
+
 // Helpers
 function normalizeText(str) {
   if (!str) return '';
@@ -349,6 +403,7 @@ function renderStudentView() {
   submitButton.innerText = 'קודם ממלאים שם מלא למעלה ←';
   document.getElementById('result-area').style.display = 'none';
   document.getElementById('teacher-notification').style.display = 'none';
+  renderAvatarPicker();
   updateNameGate();
   setTimeout(() => nameInput.focus({ preventScroll: false }), 100);
 }
@@ -375,7 +430,7 @@ async function submitQuiz() {
   inputs.forEach(input => input.disabled = true);
   try {
     const { submission } = await API.saveSubmission({ studentName: nameInput.value.trim(), quizId: currentQuiz.id,
-      answers: inputs.map(input => input.value), requestId: submissionRequestId });
+      avatar: getSelectedAvatar(), answers: inputs.map(input => input.value), requestId: submissionRequestId });
     submission.answers.forEach((answer, index) => {
       inputs[index].classList.add(answer.isCorrect ? 'correct' : 'incorrect');
       if (!answer.isCorrect) {
@@ -448,6 +503,8 @@ async function logoutAdmin() {
   submissions = [];
   document.getElementById('submissions-table-body').replaceChildren();
   document.getElementById('detail-answers-list').replaceChildren();
+  const boardFilter = document.getElementById('leaderboard-quiz-filter');
+  if (boardFilter) boardFilter.value = '';
   renderLeaderboard();
   quizzes = await API.getQuizzes();
   navigateToHome();
@@ -501,11 +558,39 @@ async function loadScoresTab() {
   document.getElementById('stat-pass-rate').innerText = `${passRate}%`;
   document.getElementById('stat-top-score').innerText = topScore;
 
-  // Populate Quiz Filter
+  // Populate Quiz Filters (scores table + leaderboard panel stay in sync)
+  const previousBoardFilter = document.getElementById('leaderboard-quiz-filter')?.value || '';
   const filterSelect = document.getElementById('scores-quiz-filter');
   filterSelect.innerHTML = `<option value="">כל הבחנים (${quizzes.length})</option>` +
     quizzes.map(q => `<option value="${q.id}">${escapeHTML(q.title)}</option>`).join('');
+  syncLeaderboardFilterOptions(previousBoardFilter);
 
+  renderSubmissionsTable();
+  renderLeaderboard();
+}
+
+function syncLeaderboardFilterOptions(preserve = '') {
+  const boardFilter = document.getElementById('leaderboard-quiz-filter');
+  if (!boardFilter) return;
+  const scoresFilter = document.getElementById('scores-quiz-filter');
+  const wanted = preserve || scoresFilter?.value || '';
+  boardFilter.innerHTML = `<option value="">כל הבחנים</option>` +
+    quizzes.map(q => `<option value="${q.id}">בוחן ${q.quizNumber || ''} · ${escapeHTML(q.title)}</option>`).join('');
+  boardFilter.value = [...boardFilter.options].some(o => o.value === wanted) ? wanted : '';
+}
+
+function getLeaderboardQuizFilter() {
+  return document.getElementById('leaderboard-quiz-filter')?.value
+    || document.getElementById('scores-quiz-filter')?.value
+    || '';
+}
+
+function onLeaderboardFilterChange() {
+  const boardFilter = document.getElementById('leaderboard-quiz-filter');
+  const scoresFilter = document.getElementById('scores-quiz-filter');
+  if (scoresFilter && boardFilter && [...scoresFilter.options].some(o => o.value === boardFilter.value)) {
+    scoresFilter.value = boardFilter.value;
+  }
   renderSubmissionsTable();
   renderLeaderboard();
 }
@@ -523,15 +608,13 @@ function renderSubmissionsTable() {
   const tbody = document.getElementById('submissions-table-body');
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 24px; color:#6b7280;">לא נמצאו הגשות התואמות לחיפוש.</td></tr>`;
-    return;
-  }
-
+  } else {
   tbody.innerHTML = filtered.map(s => {
     const dateStr = s.submittedAt ? new Date(s.submittedAt).toLocaleString('he-IL') : '—';
     const isPass = (s.score || 0) >= 55;
     return `
       <tr>
-        <td><strong>${escapeHTML(s.studentName)}</strong></td>
+        <td><span class="table-avatar-name"><img class="table-avatar" src="/${avatarFor(s)}" alt="" loading="lazy"><strong>${escapeHTML(s.studentName)}</strong></span></td>
         <td>${escapeHTML(s.quizTitle || 'בוחן')}</td>
         <td>
           <span class="badge ${isPass ? 'badge-success' : 'badge-danger'}">
@@ -547,6 +630,14 @@ function renderSubmissionsTable() {
       </tr>
     `;
   }).join('');
+  }
+
+  // Keep the leaderboard in step with the filtered quiz.
+  const boardFilter = document.getElementById('leaderboard-quiz-filter');
+  if (boardFilter && boardFilter.value !== filterQuizId && [...boardFilter.options].some(o => o.value === filterQuizId)) {
+    boardFilter.value = filterQuizId;
+  }
+  renderLeaderboard();
 }
 
 function openSubmissionDetail(subId) {
@@ -554,7 +645,7 @@ function openSubmissionDetail(subId) {
   if (!sub) return;
 
   const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-student-name').innerText = sub.studentName;
+  document.getElementById('detail-student-name').innerHTML = `<span class="table-avatar-name"><img class="table-avatar" src="/${avatarFor(sub)}" alt="">${escapeHTML(sub.studentName)}</span>`;
   document.getElementById('detail-quiz-title').innerText = `${sub.quizTitle} — ציון: ${sub.score}/100`;
 
   const container = document.getElementById('detail-answers-list');
@@ -1052,15 +1143,80 @@ function renderQuizCards() {
   container.appendChild(join);
 }
 
-function renderLeaderboard() {
-  const ranked = isAdminAuthenticated ? [...submissions].sort((a, b) => b.score - a.score).slice(0, 5) : [];
-  for (let i = 1; i <= 3; i++) {
-    document.getElementById(`podium-${i}-name`).textContent = ranked[i - 1]?.studentName || '—';
-    document.getElementById(`podium-${i}-score`).textContent = ranked[i - 1] ? `${ranked[i - 1].score}%` : '—';
+// Groups equal scores into one shared place (dense ranking): places 1..3 on the
+// podium, every tied student stacked inside its place with its own scroll.
+function groupByScore(sorted) {
+  const groups = [];
+  for (const s of sorted) {
+    const last = groups[groups.length - 1];
+    if (last && last.score === (s.score || 0)) last.members.push(s);
+    else groups.push({ score: s.score || 0, members: [s] });
   }
-  document.getElementById('leaderboard-list-body').innerHTML = ranked.length ? ranked.map((s, i) =>
-    `<div class="list-row"><span>${i + 1}</span><span>${escapeHTML(s.studentName)}</span><strong>${s.score}%</strong></div>`).join('') :
-    '<p class="leaderboard-empty">הציונים זמינים למורה לאחר הכניסה.<br>תלמידים יקבלו משוב בסיום הבוחן.</p>';
+  return groups;
+}
+
+function getLeaderboardScope() {
+  const quizId = getLeaderboardQuizFilter();
+  const scoped = isAdminAuthenticated
+    ? [...submissions]
+      .filter(s => !quizId || s.quizId === quizId)
+      .sort((a, b) => (b.score || 0) - (a.score || 0) || String(a.submittedAt || '').localeCompare(String(b.submittedAt || '')))
+    : [];
+  return { quizId, scoped, groups: groupByScore(scoped) };
+}
+
+function renderLeaderboard() {
+  const { quizId, scoped, groups } = getLeaderboardScope();
+  const scopeEl = document.getElementById('leaderboard-scope');
+  if (scopeEl) {
+    if (!isAdminAuthenticated) scopeEl.textContent = 'הציונים זמינים לאחר כניסת מורה';
+    else if (!scoped.length) scopeEl.textContent = 'אין הגשות עדיין להצגה';
+    else {
+      const quiz = quizzes.find(q => q.id === quizId);
+      scopeEl.textContent = quiz
+        ? `מציג: בוחן ${quiz.quizNumber || ''} · ${quiz.title} (${scoped.length} הגשות)`
+        : `מציג: כל הבחנים (${scoped.length} הגשות)`;
+    }
+  }
+  if (!document.getElementById('podium-1-names')) return;
+  for (let place = 1; place <= 3; place++) {
+    const group = groups[place - 1];
+    document.getElementById(`podium-${place}-score`).textContent = group ? `${group.score}%` : '—';
+    const avatarsEl = document.getElementById(`podium-${place}-avatars`);
+    const namesEl = document.getElementById(`podium-${place}-names`);
+    if (!group) {
+      if (avatarsEl) avatarsEl.innerHTML = '';
+      if (namesEl) namesEl.innerHTML = '<span class="podium-name-empty">—</span>';
+      continue;
+    }
+    if (avatarsEl) {
+      const shown = group.members.slice(0, 4);
+      avatarsEl.innerHTML = shown.map(s =>
+        `<img class="podium-avatar-img" src="/${avatarFor(s)}" alt="" loading="lazy" title="${escapeHTML(s.studentName)}">`
+      ).join('') + (group.members.length > shown.length ? `<span class="podium-more">+${group.members.length - shown.length}</span>` : '');
+    }
+    if (namesEl) {
+      namesEl.innerHTML = group.members.map(s =>
+        `<span class="podium-name-item" title="${escapeHTML(s.studentName)}">${escapeHTML(s.studentName)}</span>`
+      ).join('');
+    }
+  }
+  const listEl = document.getElementById('leaderboard-list-body');
+  if (!listEl) return;
+  if (!isAdminAuthenticated || !scoped.length) {
+    listEl.innerHTML = '<p class="leaderboard-empty">הציונים זמינים למורה לאחר הכניסה.<br>תלמידים יקבלו משוב בסיום הבוחן.</p>';
+    return;
+  }
+  const showQuiz = !quizId;
+  listEl.innerHTML = groups.slice(0, 10).map((group, groupIndex) => group.members.slice(0, 20).map(s => `
+    <div class="list-row">
+      <span class="list-left">
+        <span class="list-rank">${groupIndex + 1}</span>
+        <img class="list-avatar" src="/${avatarFor(s)}" alt="" loading="lazy">
+        <span class="list-name">${escapeHTML(s.studentName)}${showQuiz && s.quizTitle ? ` <small class="list-quiz">· ${escapeHTML(s.quizTitle)}</small>` : ''}</span>
+      </span>
+      <strong class="list-score">${s.score}%</strong>
+    </div>`).join('')).join('');
 }
 
 window.addEventListener('popstate', initApp);

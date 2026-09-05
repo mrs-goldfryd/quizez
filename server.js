@@ -12,7 +12,7 @@ async function start() {
     adminPin: process.env.ADMIN_PIN || '1234'
   });
   const publicDirectory = path.join(__dirname, 'public');
-  const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
+  const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
   http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');
@@ -32,7 +32,15 @@ async function start() {
         return;
       }
       const name = ['/', '/index.html', '/admin'].includes(url.pathname) || url.pathname.startsWith('/quiz/') ? 'index.html' : url.pathname.slice(1);
-      if (!['index.html', 'app.js', 'style.css'].includes(name)) { res.writeHead(404); res.end('Not found'); return; }
+      if (name.startsWith('assets/')) {
+        const safe = path.normalize(name).replace(/^(\.\.(\/|\\|$))+/, '');
+        const file = path.join(publicDirectory, safe);
+        if (!file.startsWith(path.join(publicDirectory, 'assets') + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); res.end('Not found'); return; }
+        res.writeHead(200, { 'Content-Type': types[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Cache-Control': 'public, max-age=86400' });
+        res.end(fs.readFileSync(file));
+        return;
+      }
+      if (!['index.html', 'app.js', 'style.css', 'favicon.png'].includes(name)) { res.writeHead(404); res.end('Not found'); return; }
       res.writeHead(200, { 'Content-Type': types[path.extname(name)] });
       res.end(fs.readFileSync(path.join(publicDirectory, name)));
     } catch (error) { console.error(error.message); res.writeHead(500); res.end('Server error'); }
