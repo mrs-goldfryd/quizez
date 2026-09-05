@@ -7,195 +7,33 @@ let currentQuiz = null;
 let currentView = 'student'; // 'student' or 'admin'
 let currentAdminTab = 'scores'; // 'scores', 'quizzes', 'settings'
 let isAdminAuthenticated = false;
-let customPin = localStorage.getItem('quiz_admin_pin') || '1234';
+let adminCredential = '';
+let submissionRequestId = '';
 
-function ensureQuizNumbers(list) {
-  if (!Array.isArray(list)) return [];
-  return list.map((q, idx) => ({
-    ...q,
-    quizNumber: q.quizNumber || (idx + 1)
-  }));
-}
-
-// API Layer with Fallback to LocalStorage
 const API = {
-  isServerAvailable: true,
-
-  async getQuizzes() {
+  async request(path, { method = 'GET', body, credential = adminCredential } = {}) {
+    let response;
     try {
-      const res = await fetch('/api/quizzes');
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          localStorage.setItem('local_quizzes_cache', JSON.stringify(data));
-          this.isServerAvailable = true;
-          return ensureQuizNumbers(data);
-        }
-      }
-    } catch (err) {
-      this.isServerAvailable = false;
-    }
-
-    try {
-      const res = await fetch('quizzes.json');
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          localStorage.setItem('local_quizzes_cache', JSON.stringify(data));
-          return ensureQuizNumbers(data);
-        }
-      }
-    } catch (e) {}
-
-    try {
-      const res = await fetch('data/quizzes.json');
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          localStorage.setItem('local_quizzes_cache', JSON.stringify(data));
-          return ensureQuizNumbers(data);
-        }
-      }
-    } catch (e) {}
-
-    const cached = localStorage.getItem('local_quizzes_cache');
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return ensureQuizNumbers(parsed);
-        }
-      } catch (e) {}
-    }
-    return ensureQuizNumbers([getDefaultQuiz()]);
+      response = await fetch(`/api/${path}`, {
+        method, headers: { 'Content-Type': 'application/json', ...(credential ? { Authorization: `Bearer ${credential}` } : {}) },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(15000)
+      });
+    } catch { throw new Error('אין חיבור לשרת. הנתונים לא נשמרו. בדקו את החיבור ונסו שוב.'); }
+    let data;
+    try { data = await response.json(); } catch { throw new Error('שרת הבחנים אינו זמין. יש לפנות למורה.'); }
+    if (!response.ok) throw new Error(data.error || 'הפעולה נכשלה. נסו שוב.');
+    return data;
   },
-
-  async saveQuiz(quiz) {
-    if (this.isServerAvailable) {
-      try {
-        const res = await fetch('/api/quizzes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(quiz)
-        });
-        if (res.ok) {
-          return await this.getQuizzes();
-        }
-      } catch (e) {
-        console.warn('Fallback to local storage for saveQuiz');
-      }
-    }
-    // Local fallback
-    let local = JSON.parse(localStorage.getItem('local_quizzes_cache') || '[]');
-    if (quiz.id) {
-      const idx = local.findIndex(q => q.id === quiz.id);
-      if (idx !== -1) local[idx] = quiz;
-      else local.push(quiz);
-    } else {
-      quiz.id = 'quiz-' + Date.now();
-      quiz.createdAt = new Date().toISOString();
-      local.push(quiz);
-    }
-    localStorage.setItem('local_quizzes_cache', JSON.stringify(local));
-    return local;
-  },
-
-  async deleteQuiz(id) {
-    if (this.isServerAvailable) {
-      try {
-        const res = await fetch(`/api/quizzes/${id}`, { method: 'DELETE' });
-        if (res.ok) return await this.getQuizzes();
-      } catch (e) {}
-    }
-    let local = JSON.parse(localStorage.getItem('local_quizzes_cache') || '[]');
-    local = local.filter(q => q.id !== id);
-    localStorage.setItem('local_quizzes_cache', JSON.stringify(local));
-    return local;
-  },
-
-  async getSubmissions() {
-    try {
-      const res = await fetch('/api/submissions');
-      if (!res.ok) throw new Error('Server error');
-      const data = await res.json();
-      localStorage.setItem('local_submissions_cache', JSON.stringify(data));
-      return data;
-    } catch (err) {
-      const cached = localStorage.getItem('local_submissions_cache');
-      return cached ? JSON.parse(cached) : [];
-    }
-  },
-
-  async saveSubmission(sub) {
-    if (this.isServerAvailable) {
-      try {
-        const res = await fetch('/api/submissions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(sub)
-        });
-        if (res.ok) return await res.json();
-      } catch (e) {
-        console.warn('Fallback saving submission locally');
-      }
-    }
-    let local = JSON.parse(localStorage.getItem('local_submissions_cache') || '[]');
-    sub.id = 'sub-' + Date.now();
-    sub.submittedAt = new Date().toISOString();
-    local.unshift(sub);
-    localStorage.setItem('local_submissions_cache', JSON.stringify(local));
-    return { success: true, submission: sub };
-  },
-
-  async deleteSubmission(id) {
-    if (this.isServerAvailable) {
-      try {
-        await fetch(`/api/submissions/${id}`, { method: 'DELETE' });
-      } catch (e) {}
-    }
-    let local = JSON.parse(localStorage.getItem('local_submissions_cache') || '[]');
-    local = local.filter(s => s.id !== id);
-    localStorage.setItem('local_submissions_cache', JSON.stringify(local));
-    return local;
-  }
+  getQuizzes() { return this.request('quizzes'); },
+  async saveQuiz(quiz) { return (await this.request('quizzes', { method: 'POST', body: quiz })).quizzes; },
+  async deleteQuiz(id) { return (await this.request(`quizzes/${encodeURIComponent(id)}`, { method: 'DELETE' })).quizzes; },
+  getSubmissions() { return this.request('submissions'); },
+  saveSubmission(submission) { return this.request('submissions', { method: 'POST', body: submission }); },
+  async deleteSubmission(id) { await this.request(`submissions/${encodeURIComponent(id)}`, { method: 'DELETE' }); return this.getSubmissions(); }
 };
 
-function getDefaultQuiz() {
-  return {
-    id: "vocab-unit-1",
-    quizNumber: 1,
-    title: "בוחן אוצר מילים - יחידה 1",
-    instructions: "הוראה: לתרגם לעברית",
-    active: true,
-    createdAt: new Date().toISOString(),
-    vocabulary: [
-      { word: "arrive", answers: ["להגיע"] },
-      { word: "appear", answers: ["להופיע"] },
-      { word: "use", answers: ["להשתמש"] },
-      { word: "help", answers: ["לעזור"] },
-      { word: "what", answers: ["מה"] },
-      { word: "where", answers: ["איפה", "היכן"] },
-      { word: "why", answers: ["למה", "מדוע"] },
-      { word: "who", answers: ["מי"] },
-      { word: "when", answers: ["מתי", "כאשר"] },
-      { word: "work", answers: ["לעבוד", "עבודה"] },
-      { word: "want", answers: ["לרצות"] },
-      { word: "think", answers: ["לחשוב"] },
-      { word: "make", answers: ["להכין", "לעשות"] },
-      { word: "live", answers: ["לחיות", "לגור"] },
-      { word: "leave", answers: ["לעזוב"] },
-      { word: "cook", answers: ["לבשל"] },
-      { word: "do", answers: ["לעשות"] },
-      { word: "give", answers: ["לתת"] },
-      { word: "get", answers: ["לקבל", "להשיג"] },
-      { word: "become", answers: ["להפוך ל", "להפוך להיות", "להיות"] },
-      { word: "about", answers: ["אודות", "על", "בערך"] },
-      { word: "can", answers: ["יכול"] },
-      { word: "should", answers: ["צריך", "כדאי", "אמור"] },
-      { word: "may / might", answers: ["עשוי", "עלול", "אולי"] },
-      { word: "according to", answers: ["לפי", "בהתאם ל"] }
-    ]
-  };
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 // Helpers
@@ -233,36 +71,25 @@ function findQuiz(param) {
   found = quizzes.find(q => String(q.quizNumber) === pStr);
   if (found) return found;
 
-  // 3. Match 1-based index (e.g. 1 -> quizzes[0])
-  const num = parseInt(pStr, 10);
-  if (!isNaN(num) && num >= 1 && num <= quizzes.length) {
-    return quizzes[num - 1];
-  }
-
-  // 4. Match title or number inside title
-  found = quizzes.find(q => {
-    const norm = normalizeText(q.title);
-    return norm.includes(pStr) || pStr.includes(norm);
-  });
-  if (found) return found;
-
   return null;
 }
 
 function getCleanQuizUrl(quiz) {
-  const origin = window.location.origin;
-  let cleanPath = window.location.pathname
-    .replace(/\/admin(\.html)?/i, '')
-    .replace(/\/index\.html$/i, '');
-  if (!cleanPath.endsWith('/')) cleanPath += '/';
-  const param = quiz.quizNumber ? quiz.quizNumber : quiz.id;
-  return `${origin}${cleanPath}?quiz=${encodeURIComponent(param)}`;
+  return `${window.location.origin}/?quiz=${encodeURIComponent(quiz.quizNumber || quiz.id)}`;
 }
 
 // --- INITIALIZATION ---
 async function initApp() {
-  quizzes = await API.getQuizzes();
-  submissions = await API.getSubmissions();
+  try {
+    quizzes = await API.getQuizzes();
+    document.getElementById('connection-error').hidden = true;
+    renderQuizCards();
+  } catch (error) {
+    document.getElementById('connection-error').hidden = false;
+    document.getElementById('connection-error-text').textContent = error.message;
+    renderLandingView();
+    return;
+  }
 
   // Check URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -305,6 +132,7 @@ async function initApp() {
 
 // --- LANDING PAGE & NAVIGATION LOGIC ---
 function renderLandingView() {
+  renderQuizCards();
   currentView = 'landing';
   const landingEl = document.getElementById('landing-view');
   const studentEl = document.getElementById('student-view');
@@ -328,7 +156,7 @@ function navigateToHome() {
   url.searchParams.delete('quiz');
   url.searchParams.delete('view');
   url.hash = '';
-  window.history.pushState({}, '', url.pathname);
+  window.history.pushState({}, '', '/');
   renderLandingView();
 }
 
@@ -348,7 +176,7 @@ function openQuizSelectModal() {
           <div class="quiz-select-card" onclick="selectQuiz('${q.id}')">
             <div>
               <span class="quiz-badge-num">בוחן ${num}</span>
-              <strong style="color: #fff; margin-right: 6px;">${q.title}</strong>
+              <strong style="color: #fff; margin-right: 6px;">${escapeHTML(q.title)}</strong>
               <small style="color: #8c82a8; display: block; margin-top: 2px;">${count} מילים</small>
             </div>
             <button class="btn btn-sm btn-primary" style="padding: 6px 14px; font-size: 0.85rem;">
@@ -399,6 +227,9 @@ function selectQuiz(quizId) {
   currentQuiz = quiz;
 
   const url = new URL(window.location);
+  url.pathname = '/';
+  url.searchParams.delete('view');
+  url.hash = '';
   url.searchParams.set('quiz', quiz.quizNumber || quiz.id);
   window.history.pushState({}, '', url);
 
@@ -427,6 +258,7 @@ function switchScreen(screen) {
 // --- STUDENT VIEW LOGIC ---
 function renderStudentView() {
   currentView = 'student';
+  submissionRequestId = crypto.randomUUID();
   const landingEl = document.getElementById('landing-view');
   const studentEl = document.getElementById('student-view');
   const adminEl = document.getElementById('admin-view');
@@ -461,9 +293,9 @@ function renderStudentView() {
     row.className = 'question-row';
     row.innerHTML = `
       <div class="question-num">${index + 1}.</div>
-      <div class="question-word">${item.word}</div>
+      <div class="question-word">${escapeHTML(item.word)}</div>
       <div class="question-input-wrapper">
-        <input type="text" class="question-input" id="q-${index}" placeholder="הכנס פירוש בעברית..." autocomplete="off">
+        <input type="text" class="question-input" id="q-${index}" aria-label="${escapeHTML(item.word)}" placeholder="הכנס פירוש בעברית..." autocomplete="off">
         <div class="correct-answer-hint" id="hint-${index}" style="display:none;"></div>
       </div>
     `;
@@ -481,99 +313,38 @@ function renderStudentView() {
 
 async function submitQuiz() {
   const nameInput = document.getElementById('student-name');
-  const studentName = nameInput.value.trim();
-
-  if (!studentName) {
-    alert('אנא הזן/הזיני את שמך המלא לפני הגשת הבוחן.');
-    nameInput.focus();
-    return;
-  }
-
-  const submitBtn = document.getElementById('submit-btn');
-  submitBtn.disabled = true;
-  submitBtn.innerText = 'מחשב ציון ושומר...';
-
-  let correctCount = 0;
-  const total = currentQuiz.vocabulary.length;
-  const answersDetail = [];
-
-  currentQuiz.vocabulary.forEach((item, index) => {
-    const input = document.getElementById(`q-${index}`);
-    const studentAnswer = input.value.trim();
-    const normalizedStudent = normalizeText(studentAnswer);
-
-    // Lenient check against all valid answers
-    const isCorrect = item.answers.some(ans => normalizeText(ans) === normalizedStudent);
-
-    if (isCorrect) {
-      correctCount++;
-      input.classList.remove('incorrect');
-      input.classList.add('correct');
-    } else {
-      input.classList.remove('correct');
-      input.classList.add('incorrect');
-      // Show correct answer hint
-      const hint = document.getElementById(`hint-${index}`);
-      hint.innerText = `תשובה נכונה: ${item.answers.join(' / ')}`;
-      hint.style.display = 'block';
-    }
-
-    input.disabled = true;
-    answersDetail.push({
-      word: item.word,
-      studentAnswer: studentAnswer,
-      isCorrect: isCorrect,
-      expectedAnswers: item.answers
-    });
-  });
-
+  if (!nameInput.value.trim()) { showToast('יש למלא שם מלא לפני ההגשה.'); nameInput.focus(); return; }
+  const button = document.getElementById('submit-btn');
+  const inputs = [...document.querySelectorAll('.question-input')];
+  button.disabled = true;
+  button.textContent = 'שומר את הבוחן...';
   nameInput.disabled = true;
-  const score = Math.round((correctCount / total) * 100);
-
-  // Show score card
-  const resultArea = document.getElementById('result-area');
-  const scoreValue = document.getElementById('score-value');
-  const scoreText = document.getElementById('score-text');
-
-  scoreValue.innerText = `${score} / 100`;
-  scoreValue.className = `result-score ${score >= 55 ? 'pass' : 'fail'}`;
-  scoreText.innerHTML = `שלום <strong>${studentName}</strong>, ענית נכון על <strong>${correctCount}</strong> מתוך <strong>${total}</strong> שאלות.`;
-  resultArea.style.display = 'block';
-
-  submitBtn.innerText = 'הבוחן הוגש בהצלחה!';
-
-  // Prepare submission object
-  const submissionData = {
-    studentName: studentName,
-    quizId: currentQuiz.id,
-    quizTitle: currentQuiz.title,
-    score: score,
-    correctCount: correctCount,
-    total: total,
-    answers: answersDetail
-  };
-
-  // 1. Save to Backend / Database
+  inputs.forEach(input => input.disabled = true);
   try {
-    await API.saveSubmission(submissionData);
+    const { submission } = await API.saveSubmission({ studentName: nameInput.value.trim(), quizId: currentQuiz.id,
+      answers: inputs.map(input => input.value), requestId: submissionRequestId });
+    submission.answers.forEach((answer, index) => {
+      inputs[index].classList.add(answer.isCorrect ? 'correct' : 'incorrect');
+      if (!answer.isCorrect) {
+        const hint = document.getElementById(`hint-${index}`);
+        hint.textContent = `תשובה נכונה: ${answer.expectedAnswers.join(' / ')}`;
+        hint.style.display = 'block';
+      }
+    });
+    const score = document.getElementById('score-value');
+    score.textContent = `${submission.score} / 100`;
+    score.className = `result-score ${submission.score >= 55 ? 'pass' : 'fail'}`;
+    document.getElementById('score-text').textContent = `${submission.studentName}, ענית נכון על ${submission.correctCount} מתוך ${submission.total} שאלות.`;
+    document.getElementById('result-area').style.display = 'block';
     document.getElementById('teacher-notification').style.display = 'block';
-  } catch (err) {
-    console.error('Submission save error:', err);
+    button.textContent = 'הבוחן הוגש בהצלחה!';
+  } catch (error) {
+    showToast(error.message);
+    button.disabled = false;
+    button.textContent = 'נסה להגיש שוב';
+    nameInput.disabled = false;
+    inputs.forEach(input => input.disabled = false);
   }
-
-  // 2. FormSubmit backup email notification
-  fetch("https://formsubmit.co/ajax/dgoldfryd@gmail.com", {
-    method: "POST",
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({
-      "_subject": `ציון בוחן אנגלית: ${studentName} - ${score}/100`,
-      "שם התלמיד": studentName,
-      "שם הבוחן": currentQuiz.title,
-      "ציון סופי": `${score} / 100`,
-      "תשובות נכונות": `${correctCount} מתוך ${total}`,
-      "תאריך הגשה": new Date().toLocaleString("he-IL")
-    })
-  }).catch(e => console.warn('Email notification error:', e));
 }
 
 // --- ADMIN / TEACHER PANEL LOGIC ---
@@ -587,26 +358,31 @@ function openAdminAuth() {
   }
 }
 
-function verifyAdminPin() {
-  const pinInput = document.getElementById('admin-pin-input');
-  if (pinInput.value === customPin) {
+async function verifyAdminPin() {
+  const input = document.getElementById('admin-pin-input');
+  const error = document.getElementById('auth-error');
+  try {
+    await API.request('auth', { method: 'POST', credential: input.value });
+    adminCredential = input.value;
+    quizzes = await API.getQuizzes();
     isAdminAuthenticated = true;
+    currentAdminTab = 'quizzes';
     document.getElementById('auth-modal').classList.remove('open');
-    pinInput.value = '';
+    input.value = '';
+    error.textContent = '';
     renderAdminView();
-  } else {
-    alert('קוד גישה שגוי! נסה שוב.');
-    pinInput.value = '';
-    pinInput.focus();
-  }
+  } catch (failure) { adminCredential = ''; error.textContent = failure.message; input.focus(); }
 }
 
-function logoutAdmin() {
+async function logoutAdmin() {
   isAdminAuthenticated = false;
-  const url = new URL(window.location);
-  url.searchParams.delete('view');
-  window.history.pushState({}, '', url.pathname);
-  renderLandingView();
+  adminCredential = '';
+  submissions = [];
+  document.getElementById('submissions-table-body').replaceChildren();
+  document.getElementById('detail-answers-list').replaceChildren();
+  renderLeaderboard();
+  quizzes = await API.getQuizzes();
+  navigateToHome();
 }
 
 function renderAdminView() {
@@ -660,9 +436,10 @@ async function loadScoresTab() {
   // Populate Quiz Filter
   const filterSelect = document.getElementById('scores-quiz-filter');
   filterSelect.innerHTML = `<option value="">כל הבחנים (${quizzes.length})</option>` +
-    quizzes.map(q => `<option value="${q.id}">${q.title}</option>`).join('');
+    quizzes.map(q => `<option value="${q.id}">${escapeHTML(q.title)}</option>`).join('');
 
   renderSubmissionsTable();
+  renderLeaderboard();
 }
 
 function renderSubmissionsTable() {
@@ -686,8 +463,8 @@ function renderSubmissionsTable() {
     const isPass = (s.score || 0) >= 55;
     return `
       <tr>
-        <td><strong>${s.studentName}</strong></td>
-        <td>${s.quizTitle || 'בוחן'}</td>
+        <td><strong>${escapeHTML(s.studentName)}</strong></td>
+        <td>${escapeHTML(s.quizTitle || 'בוחן')}</td>
         <td>
           <span class="badge ${isPass ? 'badge-success' : 'badge-danger'}">
             ${s.score} / 100
@@ -720,11 +497,11 @@ function openSubmissionDetail(subId) {
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #e2e8f0; background: ${a.isCorrect ? '#f0fdf4' : '#fef2f2'}; margin-bottom: 6px; border-radius: 6px;">
         <div>
           <span style="font-weight: bold; margin-left: 8px;">${i + 1}.</span>
-          <span style="font-family: monospace; font-size: 1.1rem; color: #0f172a; direction: ltr; display: inline-block;">${a.word}</span>
+          <span style="font-family: monospace; font-size: 1.1rem; color: #0f172a; direction: ltr; display: inline-block;">${escapeHTML(a.word)}</span>
         </div>
         <div style="text-align: left; direction: rtl;">
-          <span>תשובת התלמיד: <strong>${a.studentAnswer || '(ריק)'}</strong></span>
-          ${!a.isCorrect ? `<br><small style="color:#b91c1c;">היה צריך: ${a.expectedAnswers ? a.expectedAnswers.join(', ') : ''}</small>` : ''}
+          <span>תשובת התלמיד: <strong>${escapeHTML(a.studentAnswer || '(ריק)')}</strong></span>
+          ${!a.isCorrect ? `<br><small style="color:#b91c1c;">היה צריך: ${escapeHTML(a.expectedAnswers ? a.expectedAnswers.join(', ') : '')}</small>` : ''}
         </div>
         <div>
           <span class="badge ${a.isCorrect ? 'badge-success' : 'badge-danger'}">
@@ -790,10 +567,10 @@ async function loadQuizzesTab() {
         <div class="quiz-item-details">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span class="quiz-badge-num">בוחן ${num}</span>
-            <h3 style="margin: 0;">${q.title}</h3>
+            <h3 style="margin: 0;">${escapeHTML(q.title)}</h3>
           </div>
           <p style="color: #8c82a8; font-size: 0.9rem; margin-top: 4px;">
-            ${wordCount} מילים • ${q.instructions || 'הוראה: לתרגם לעברית'} • קישור ישיר: <code style="color: #b76cff;">?quiz=${num}</code>
+            ${wordCount} מילים • ${escapeHTML(q.instructions || 'הוראה: לתרגם לעברית')} • קישור ישיר: <code style="color: #b76cff;">?quiz=${num}</code>
           </p>
         </div>
         <div class="quiz-actions">
@@ -858,8 +635,8 @@ function addWordRowToModal(word = '', answers = '') {
   row.style.gap = '8px';
   row.style.marginBottom = '8px';
   row.innerHTML = `
-    <input type="text" class="form-control word-eng" placeholder="מילה באנגלית (למשל: arrive)" value="${word}" style="direction: ltr; flex: 1;">
-    <input type="text" class="form-control word-heb" placeholder="תרגומים בעברית מופרדים בפסיקים (למשל: להגיע, לבוא)" value="${answers}" style="flex: 2;">
+    <input type="text" class="form-control word-eng" aria-label="מילה באנגלית" placeholder="מילה באנגלית (למשל: arrive)" value="${escapeHTML(word)}" style="direction: ltr; flex: 1;">
+    <input type="text" class="form-control word-heb" aria-label="תרגומים בעברית" placeholder="תרגומים בעברית מופרדים בפסיקים (למשל: להגיע, לבוא)" value="${escapeHTML(answers)}" style="flex: 2;">
     <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">✕</button>
   `;
   container.appendChild(row);
@@ -911,6 +688,8 @@ async function saveQuizFromModal() {
     return;
   }
 
+  if ([...wordRows].some(row => Boolean(row.querySelector('.word-eng').value.trim()) !== Boolean(row.querySelector('.word-heb').value.trim()))) { showToast('יש למלא גם מילה וגם תרגום בכל שורה.'); return; }
+
   const payload = {
     id: id || undefined,
     title,
@@ -919,9 +698,14 @@ async function saveQuizFromModal() {
     active: true
   };
 
-  quizzes = await API.saveQuiz(payload);
+  const saveButton = document.getElementById('save-quiz-btn');
+  saveButton.disabled = true;
+  try { quizzes = await API.saveQuiz(payload); }
+  catch (error) { showToast(error.message); return; }
+  finally { saveButton.disabled = false; }
   document.getElementById('quiz-editor-modal').classList.remove('open');
-  loadQuizzesTab();
+  await loadQuizzesTab();
+  renderQuizCards();
   showToast('הבוחן נשמר בהצלחה!');
 }
 
@@ -933,9 +717,9 @@ async function deleteQuizConfirm(id) {
   }
 }
 
-// Admin Tab 3: Settings & Firebase
+// Admin Tab 3: Settings and backups
 function loadSettingsTab() {
-  document.getElementById('current-admin-pin').value = customPin;
+
   const geminiInput = document.getElementById('gemini-api-key');
   if (geminiInput) {
     geminiInput.value = localStorage.getItem('gemini_api_key') || '';
@@ -948,18 +732,9 @@ function saveGeminiApiKey() {
   showToast('מפתח Gemini API נשמר בהצלחה!');
 }
 
-function updateAdminPin() {
-  const newPin = document.getElementById('current-admin-pin').value.trim();
-  if (newPin.length < 4) {
-    alert('הקוד חייב להכיל לפחות 4 תווים.');
-    return;
-  }
-  customPin = newPin;
-  localStorage.setItem('quiz_admin_pin', newPin);
-  showToast('קוד הגישה למורה עודכן בהצלחה!');
-}
-
-function exportDatabaseJSON() {
+async function exportDatabaseJSON() {
+  submissions = await API.getSubmissions();
+  quizzes = await API.getQuizzes();
   const data = {
     quizzes,
     submissions,
@@ -1012,15 +787,6 @@ function handleImageSelected(event) {
   reader.readAsDataURL(file);
 }
 
-function loadSampleWhiteboardImage() {
-  selectedWhiteboardDataUrl = 'sample_whiteboard.jpg';
-  document.getElementById('scanner-preview-img').src = selectedWhiteboardDataUrl;
-  document.getElementById('scanner-source-img-small').src = selectedWhiteboardDataUrl;
-  document.getElementById('scanner-image-preview-area').style.display = 'block';
-  document.getElementById('scanner-analyze-btn').style.display = 'inline-block';
-  showToast('תמונת הלוח מהכיתה נטענה!');
-}
-
 function togglePreviewImage() {
   const container = document.getElementById('collapsible-source-image');
   container.style.display = container.style.display === 'none' ? 'block' : 'none';
@@ -1068,14 +834,14 @@ Return ONLY a valid JSON object matching this schema, without markdown backticks
   ]
 }`;
 
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{
             parts: [
               { text: prompt },
-              { inlineData: { mimeType: 'image/jpeg', data: base64Data } }
+              { inlineData: { mimeType: selectedWhiteboardDataUrl.match(/^data:([^;]+)/)?.[1] || 'image/jpeg', data: base64Data } }
             ]
           }],
           generationConfig: { responseMimeType: "application/json" }
@@ -1088,46 +854,15 @@ Return ONLY a valid JSON object matching this schema, without markdown backticks
         extractedQuiz = JSON.parse(text);
       }
     } catch (err) {
-      console.warn('Gemini vision API error, using smart fallback parser:', err);
+      console.warn('Image reading failed');
     }
   }
 
-  // Smart fallback / built-in recognition for the whiteboard image
-  if (!extractedQuiz) {
-    // Artificial 1-second delay for smooth UI experience
-    await new Promise(r => setTimeout(r, 1200));
-
-    extractedQuiz = {
-      title: "Quiz no. 1 - 9/9/26 (לוח כיתתי)",
-      instructions: "הוראה: לתרגם לעברית",
-      vocabulary: [
-        { word: "arrive", answers: ["להגיע"] },
-        { word: "appear", answers: ["להופיע"] },
-        { word: "use", answers: ["להשתמש"] },
-        { word: "help", answers: ["לעזור", "עזרה"] },
-        { word: "what", answers: ["מה"] },
-        { word: "where", answers: ["איפה", "היכן"] },
-        { word: "why", answers: ["למה", "מדוע"] },
-        { word: "who", answers: ["מי"] },
-        { word: "when", answers: ["מתי", "כאשר"] },
-        { word: "work", answers: ["לעבוד", "עבודה"] },
-        { word: "want", answers: ["לרצות"] },
-        { word: "think", answers: ["לחשוב"] },
-        { word: "make", answers: ["לעשות", "להכין"] },
-        { word: "live", answers: ["לחיות", "לגור"] },
-        { word: "leave", answers: ["לעזוב"] },
-        { word: "cook", answers: ["לבשל"] },
-        { word: "do", answers: ["לעשות"] },
-        { word: "give", answers: ["לתת"] },
-        { word: "get", answers: ["לקבל", "להשיג"] },
-        { word: "become", answers: ["להפוך ל", "להיות"] },
-        { word: "about", answers: ["אודות", "על", "בערך"] },
-        { word: "can", answers: ["יכול"] },
-        { word: "should", answers: ["כדאי", "צריך"] },
-        { word: "may / might", answers: ["אפשר", "אולי", "עשוי"] },
-        { word: "according to", answers: ["לפי", "בהתאם ל"] }
-      ]
-    };
+  if (!extractedQuiz || !Array.isArray(extractedQuiz.vocabulary) || !extractedQuiz.vocabulary.length || extractedQuiz.vocabulary.some(item => typeof item.word !== 'string' || !Array.isArray(item.answers) || item.answers.some(a => typeof a !== 'string'))) {
+    document.getElementById('scanner-loading').style.display = 'none';
+    document.getElementById('scanner-analyze-btn').style.display = 'inline-block';
+    showToast('לא ניתן לקרוא את התמונה. בדקו את מפתח הסריקה או צרו בוחן ידנית.');
+    return;
   }
 
   // Populate Step 2: Teacher Preview & Approval
@@ -1161,10 +896,10 @@ function addScannerWordRow(word = '', answers = '') {
   tr.innerHTML = `
     <td style="font-weight: bold; color: #64748b;">${index}</td>
     <td>
-      <input type="text" class="form-control scanner-eng" value="${word}" placeholder="מילה באנגלית" style="direction: ltr; font-weight: 600;">
+      <input type="text" class="form-control scanner-eng" value="${escapeHTML(word)}" placeholder="מילה באנגלית" style="direction: ltr; font-weight: 600;">
     </td>
     <td>
-      <input type="text" class="form-control scanner-heb" value="${answers}" placeholder="תרגומים בעברית מופרדים בפסיקים">
+      <input type="text" class="form-control scanner-heb" value="${escapeHTML(answers)}" placeholder="תרגומים בעברית מופרדים בפסיקים">
     </td>
     <td style="text-align: center;">
       <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); updateScannerCount();">✕</button>
@@ -1219,5 +954,43 @@ async function approveAndSaveScannerQuiz() {
   alert(`✓ הבוחן "${title}" אושר ונשמר בהצלחה!\nהקישור לתלמידים הועתק אוטומטית ללוח: \n${link}`);
 }
 
+function renderQuizCards() {
+  const container = document.getElementById('landing-quiz-cards');
+  container.replaceChildren();
+  quizzes.filter(q => q.active !== false).forEach((q, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `peer-card ${index === 0 ? 'card-29-mar' : ''}`;
+    button.innerHTML = `<span class="date-badge"><span class="date-num">${q.quizNumber}</span><span class="date-month">QUIZ</span></span>
+      <span class="avatar-box vocabulary-icon" aria-hidden="true">Aa</span><span class="peer-name">${escapeHTML(q.title)}</span>
+      <span class="peer-role">${q.vocabulary.length} מילים</span><span class="peer-loc">${escapeHTML(q.instructions)}</span><span class="card-pill-tag">פתיחת הבוחן ←</span>`;
+    button.addEventListener('click', () => selectQuiz(q.id));
+    container.appendChild(button);
+  });
+  const join = document.createElement('button');
+  join.type = 'button';
+  join.className = 'peer-card featured-card';
+  join.innerHTML = '<span class="avatar-box vocabulary-icon" aria-hidden="true">#</span><span class="peer-name">יש לכם מספר בוחן?</span><span class="peer-role">הזינו את המספר שקיבלתם מהמורה</span><span class="card-pill-tag">כניסה לבוחן ←</span>';
+  join.addEventListener('click', openQuizSelectModal);
+  container.appendChild(join);
+}
+
+function renderLeaderboard() {
+  const ranked = isAdminAuthenticated ? [...submissions].sort((a, b) => b.score - a.score).slice(0, 5) : [];
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById(`podium-${i}-name`).textContent = ranked[i - 1]?.studentName || '—';
+    document.getElementById(`podium-${i}-score`).textContent = ranked[i - 1] ? `${ranked[i - 1].score}%` : '—';
+  }
+  document.getElementById('leaderboard-list-body').innerHTML = ranked.length ? ranked.map((s, i) =>
+    `<div class="list-row"><span>${i + 1}</span><span>${escapeHTML(s.studentName)}</span><strong>${s.score}%</strong></div>`).join('') :
+    '<p class="leaderboard-empty">הציונים זמינים למורה לאחר הכניסה.<br>תלמידים יקבלו משוב בסיום הבוחן.</p>';
+}
+
+window.addEventListener('popstate', initApp);
+window.addEventListener('unhandledrejection', event => { event.preventDefault(); showToast(event.reason?.message || 'הפעולה נכשלה. נסו שוב.'); });
+window.addEventListener('keydown', event => {
+  if (event.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(modal => modal.classList.remove('open'));
+});
+
 // Run app on load
-window.addEventListener('DOMContentLoaded', initApp);
+window.addEventListener('DOMContentLoaded', () => { renderLeaderboard(); initApp(); });

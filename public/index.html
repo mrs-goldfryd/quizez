@@ -2,12 +2,12 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mrs. Goldfryd Quizzes — מערכת בחנים באנגלית</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
@@ -44,7 +44,7 @@
 
       <div class="nav-group">
         <!-- Home / Quizzes -->
-        <div class="nav-item active" id="sidebar-quizzes" onclick="sidebarNav('home')">
+        <button type="button" class="nav-item active" id="sidebar-quizzes" onclick="sidebarNav('home')">
           <div class="icon-box">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -52,10 +52,10 @@
             </svg>
           </div>
           <span>ראשי</span>
-        </div>
+        </button>
 
         <!-- Admin / Teacher -->
-        <div class="nav-item" id="sidebar-admin" onclick="sidebarNav('admin')">
+        <button type="button" class="nav-item" id="sidebar-admin" onclick="sidebarNav('admin')">
           <div class="icon-box">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <circle cx="8.5" cy="8" r="3.2" fill="#ff769f"/>
@@ -65,10 +65,10 @@
             </svg>
           </div>
           <span>ניהול</span>
-        </div>
+        </button>
 
         <!-- Settings -->
-        <div class="nav-item" id="sidebar-settings" onclick="sidebarNav('admin-settings')">
+        <button type="button" class="nav-item" id="sidebar-settings" onclick="sidebarNav('admin-settings')">
           <div class="icon-box">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
@@ -76,7 +76,7 @@
             </svg>
           </div>
           <span>הגדרות</span>
-        </div>
+        </button>
       </div>
 
       <div class="sidebar-bottom">
@@ -115,176 +115,27 @@
       </header>
 
       <div class="container">
+        <div id="connection-error" class="connection-error" role="alert" hidden><span id="connection-error-text"></span> <button class="btn btn-outline btn-sm" onclick="initApp()">נסה שוב</button></div>
         <!-- ============================================== -->
         <!-- VIEW 0: MRS. GOLDFRYD QUIZZES LANDING PAGE     -->
         <!-- ============================================== -->
         <div id="landing-view">
-          <div class="card" style="text-align: center; padding: 44px 20px;">
-            <div class="landing-badge">
-              <span>✨</span>
-              <span>English Vocabulary Portal</span>
+          <div class="landing-intro">
+            <span class="eyebrow">MRS. GOLDFRYD · ENGLISH CLASS</span>
+            <h1>כל מילה היא התחלה חדשה<span>.</span></h1>
+            <p>ברוכים הבאים לכיתה של הגב׳ גולדפריד.<br>בחרו בוחן, תרגמו לעברית וקבלו משוב על מה שלמדתם.</p>
+            <div class="landing-actions">
+              <button class="btn btn-primary" onclick="openQuizSelectModal()">התחל בוחן / Start Quiz <span aria-hidden="true">←</span></button>
+              <button class="btn btn-outline" onclick="openAdminAuth()">כניסת מורה</button>
             </div>
-            
-            <h1 style="font-size: 2.2rem; font-weight: 800; color: #fff; margin: 16px 0 10px; line-height: 1.25;">
-              מערכת הבחנים באנגלית<br>
-              <span style="color: #ffbe3b;">הגב׳ גולדפריד</span>
-            </h1>
-            
-            <p style="font-size: 1.15rem; color: #c9bfeb; max-width: 520px; margin: 0 auto 32px; line-height: 1.5;">
-              ברוכים הבאים למערכת התרגול והבחנים באנגלית! כאן תוכלו לבצע את הבוחן שהוגדר עבורכם ולקבל משוב מיידי.
-            </p>
-
-            <div style="margin-bottom: 32px;">
-              <button class="btn btn-primary btn-cta" onclick="openQuizSelectModal()" style="font-size: 1.25rem; padding: 16px 44px; border-radius: 50px; font-weight: 800;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-                התחל בוחן / Start Quiz
-              </button>
-            </div>
-
-            <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 20px; max-width: 520px; margin: 0 auto; text-align: right;">
-              <h3 style="color: #ffdfbb; font-size: 1rem; margin-bottom: 8px;">
-                💡 הנחיות לתלמידים:
-              </h3>
-              <ul style="color: #a499c4; font-size: 0.92rem; line-height: 1.6; padding-right: 20px; margin: 0;">
-                <li>לחצו על <strong>״התחל בוחן״</strong> והזינו את מספר הבוחן שקיבלתם מהמורה.</li>
-                <li>אם קיבלתם קישור ישיר לבוחן, הוא ייפתח מיד ללא צורך בהזנת מספר.</li>
-                <li>בסיום הבוחן, הציון יישמר ויועבר ישירות למורה.</li>
-              </ul>
-            </div>
-
-            <div style="margin-top: 28px;">
-              <button class="btn btn-outline btn-sm" onclick="openAdminAuth()" style="color: #8c82a8; border-color: rgba(255,255,255,0.15);">
-                🔒 כניסת מורה למערכת הניהול
-              </button>
-            </div>
+            <span class="intro-decoration" aria-hidden="true">Aa<span>א</span></span>
           </div>
-
-          <!-- Module Cards Grid (Reference UI/UX Design) -->
-          <div class="header-row" style="margin-top: 32px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <h2 class="page-title" style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 2px;">
-                יחידות לימוד ובחנים זמינים
-              </h2>
-              <p style="color: #8c82a8; font-size: 0.85rem;">בחרו יחידה או לחצו על הבוחן הפעיל כדי להתחיל בתרגול</p>
-            </div>
-            <div class="search-wrap" onclick="openQuizSelectModal()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              <span>חיפוש בוחן לפי מספר</span>
-            </div>
+          <div class="header-row section-heading">
+            <div><h2 class="page-title">הבחנים שלכם</h2><p>בחרו את הבוחן שקיבלתם מהמורה</p></div>
+            <button class="search-wrap" onclick="openQuizSelectModal()" aria-label="חיפוש לפי מספר בוחן">חיפוש בוחן <span aria-hidden="true">⌕</span></button>
           </div>
-
-          <div class="cards-grid">
-            <!-- Card 1: Unit 1 Vocab Quiz (Signature Tilt) -->
-            <div class="peer-card card-29-mar" onclick="selectQuiz('vocab-unit-1')" title="התחל בוחן יחידה 1">
-              <div class="date-badge">
-                <div class="date-num">01</div>
-                <div class="date-month">UNIT</div>
-              </div>
-              <div class="avatar-box" style="background:#ffbe3b;">
-                <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" fill="#1e1735"/>
-                  <circle cx="12" cy="14" r="3" fill="#1e1735"/>
-                </svg>
-              </div>
-              <div class="peer-name">אוצר מילים יחידה 1</div>
-              <div class="peer-role">25 מילים • תרגום לעברית</div>
-              <div class="peer-loc">פעיל כעת להגשה</div>
-              <div class="card-pill-tag">התחל בוחן מיידי ➔</div>
-            </div>
-
-            <!-- Card 2: Quick Start by Number (Featured Card) -->
-            <div class="peer-card featured-card" onclick="openQuizSelectModal()" title="כניסה לפי מספר בוחן">
-              <div class="date-badge">
-                <div class="date-num" style="color:#21193a;">#</div>
-                <div class="date-month" style="color:#21193a;">ENTER</div>
-              </div>
-              <div class="avatar-box" style="background:#1e1735;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 12h14M12 5l7 7-7 7" stroke="#ffbe3b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <div class="peer-name">כניסה לפי מספר בוחן</div>
-              <div class="peer-role">הקלדת קוד שקיבלת מהמורה</div>
-              <div class="peer-loc">חיפוש מהיר בכל הבחנים</div>
-              <div class="card-pill-tag">פתיחת רשימת בחנים ➔</div>
-            </div>
-
-            <!-- Card 3: Whiteboard Material -->
-            <div class="peer-card" onclick="openQuizSelectModal()" title="חומרי לוח ועדכוני כיתה">
-              <div class="date-badge">
-                <div class="date-num">AI</div>
-                <div class="date-month">SCAN</div>
-              </div>
-              <div class="avatar-box" style="background:#ff769f;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" stroke="#1e1735" stroke-width="2.2"/>
-                  <circle cx="12" cy="12" r="3.5" stroke="#1e1735" stroke-width="2.2"/>
-                </svg>
-              </div>
-              <div class="peer-name">חומרי לוח וסריקות AI</div>
-              <div class="peer-role">מילים שסוכמו על הלוח</div>
-              <div class="peer-loc">מעודכן לפי שיעורי השבוע</div>
-              <div class="card-pill-tag">צפייה בבחנים פעילים</div>
-            </div>
-
-            <!-- Card 4: Unit 2 Vocab -->
-            <div class="peer-card" onclick="openQuizSelectModal()" title="אוצר מילים יחידה 2">
-              <div class="date-badge">
-                <div class="date-num">02</div>
-                <div class="date-month">UNIT</div>
-              </div>
-              <div class="avatar-box" style="background:#b76cff;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="#fff" stroke-width="2.2"/>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="#fff" stroke-width="2.2"/>
-                </svg>
-              </div>
-              <div class="peer-name">אוצר מילים יחידה 2</div>
-              <div class="peer-role">פעלים וביטויים נפוצים</div>
-              <div class="peer-loc">בהתאם לתכנית הלימודים</div>
-              <div class="card-pill-tag">בחירת בוחן ➔</div>
-            </div>
-
-            <!-- Card 5: Tips & High Score Guide -->
-            <div class="peer-card" onclick="openQuizSelectModal()" title="עזרים וטיפים להצלחה">
-              <div class="date-badge">
-                <div class="date-num">A+</div>
-                <div class="date-month">TIPS</div>
-              </div>
-              <div class="avatar-box" style="background:#38bdf8;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#1e1735"/>
-                </svg>
-              </div>
-              <div class="peer-name">עזרים וטיפים להצלחה</div>
-              <div class="peer-role">הנחיות לתרגול ושיפור הציון</div>
-              <div class="peer-loc">לתרגול עצמי לפני הבוחן</div>
-              <div class="card-pill-tag">מידע לתלמידים</div>
-            </div>
-
-            <!-- Card 6: Teacher Portal -->
-            <div class="peer-card" onclick="openAdminAuth()" title="פורטל המורה והציונים">
-              <div class="date-badge">
-                <div class="date-num">🔒</div>
-                <div class="date-month">ADMIN</div>
-              </div>
-              <div class="avatar-box" style="background:#ff769f;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="#1e1735"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#1e1735" stroke-width="2.5"/>
-                </svg>
-              </div>
-              <div class="peer-name">אזור ניהול וציונים</div>
-              <div class="peer-role">לוח בקרה, ציונים וסריקה</div>
-              <div class="peer-loc">כניסת מורה מורשית</div>
-              <div class="card-pill-tag">כניסת מורה ➔</div>
-            </div>
-          </div>
+          <div class="cards-grid" id="landing-quiz-cards"></div>
+          <div class="student-guidance"><span class="guidance-number">01</span><p>בחרו בוחן והזינו את שמכם המלא.</p><span class="guidance-number">02</span><p>תרגמו את המילים. לאחר ההגשה יופיעו הציון והתשובות.</p></div>
         </div>
 
         <!-- ============================================== -->
@@ -342,7 +193,7 @@
               </div>
               <div>
                 <button class="btn btn-outline btn-sm" onclick="logoutAdmin()">
-                  ← חזרה למסך התלמיד
+                  יציאה מאזור המורה
                 </button>
               </div>
             </div>
@@ -387,8 +238,8 @@
             <div class="card">
               <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
                 <div style="display: flex; gap: 12px; flex: 1; min-width: 280px;">
-                  <input type="text" id="scores-search" class="form-control" placeholder="חיפוש לפי שם תלמיד..." oninput="renderSubmissionsTable()">
-                  <select id="scores-quiz-filter" class="form-control" style="max-width: 220px;" onchange="renderSubmissionsTable()"></select>
+                  <input type="text" id="scores-search" aria-label="חיפוש תלמיד" class="form-control" placeholder="חיפוש לפי שם תלמיד..." oninput="renderSubmissionsTable()">
+                  <select id="scores-quiz-filter" aria-label="סינון לפי בוחן" class="form-control" style="max-width: 220px;" onchange="renderSubmissionsTable()"></select>
                 </div>
                 <button class="btn btn-success" onclick="exportScoresCSV()">
                   📥 ייצוא לאקסל (CSV)
@@ -438,11 +289,7 @@
           <div id="admin-settings-section" style="display: none;">
             <div class="card">
               <h2 style="margin-bottom: 12px; color: #fff;">אבטחת אזור המורה</h2>
-              <p style="color: #8c82a8; margin-bottom: 16px;">שנה את קוד הגישה (PIN) הנדרש לכניסה ללוח המורה.</p>
-              <div style="display: flex; gap: 12px; max-width: 400px;">
-                <input type="password" id="current-admin-pin" class="form-control" placeholder="קוד PIN חדש">
-                <button class="btn btn-primary" onclick="updateAdminPin()">עדכן קוד</button>
-              </div>
+              <p style="color: #c9bfeb;">קוד הכניסה משותף למכשירי המורה. לשינוי הקוד יש לפנות למנהל האתר.</p>
             </div>
 
             <div class="card">
@@ -455,20 +302,20 @@
                 <button class="btn btn-primary" onclick="saveGeminiApiKey()">שמור מפתח</button>
               </div>
               <small style="color: #8c82a8;">
-                💡 ניתן להנפיק מפתח חינמי ללא עלות ב- <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #ffbe3b; text-decoration: underline;">Google AI Studio</a>. (גם ללא מפתח, תמונת ההדגמה מהכיתה מוכנה לבדיקה מיידית!).
+                💡 ניתן להנפיק מפתח חינמי ללא עלות ב- <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #ffbe3b; text-decoration: underline;">Google AI Studio</a>. יש להגדיר מפתח תקין לפני סריקה.
               </small>
             </div>
 
             <div class="card">
               <h2 style="margin-bottom: 12px; color: #fff;">סנכרון ענן ובסיס נתונים</h2>
               <p style="color: #8c82a8; margin-bottom: 16px;">
-                המערכת פועלת כעת עם שמירה מקומית וענן.
+                הבחנים והציונים נשמרים בשרת וזמינים מכל מכשיר לאחר כניסת מורה.
               </p>
               <div style="background: #1c1532; border: 1px solid rgba(255,255,255,0.08); padding: 16px; border-radius: 14px; margin-bottom: 16px;">
                 <p style="font-weight: 700; color: #ffbe3b; margin-bottom: 6px;">💡 טיפ פשוט למורה:</p>
                 <p style="font-size: 0.95rem; color: #c9bfeb;">
                   כאשר האפליקציה רצה, כל ההגשות נשמרות אוטומטית בבסיס הנתונים וזמינות עבורך בטאב <strong style="color:#fff;">״לוח ציונים והגשות״</strong>.
-                  בנוסף, כל הגשה שולחת אליך הודעת גיבוי למייל <code style="color:#b76cff; background:#1e1735; padding:2px 6px; border-radius:4px;">dgoldfryd@gmail.com</code>!
+
                 </p>
               </div>
               <button class="btn btn-outline" onclick="exportDatabaseJSON()">
@@ -567,7 +414,7 @@
       <div class="leaderboard-list" id="leaderboard-list-body">
         <!-- Populated dynamically by app.js -->
         <div class="list-row" style="justify-content: center; color: #8c82a8; font-size: 12px; padding: 20px;">
-          הגשות תלמידים יופיעו כאן
+          הציונים זמינים לאחר כניסת מורה
         </div>
       </div>
     </aside>
@@ -621,7 +468,7 @@
             העלה תמונה של הלוח, המערכת תפענח את המילים ותציג אותן לאישורך ועריכתך
           </p>
         </div>
-        <button class="modal-close" onclick="closeScannerModal()">✕</button>
+        <button aria-label="סגור חלון" class="modal-close" onclick="closeScannerModal()">✕</button>
       </div>
 
       <!-- Step 1: Upload / Choose image -->
@@ -631,10 +478,7 @@
           <button class="btn btn-primary" onclick="document.getElementById('whiteboard-file-input').click()">
             📁 העלה תמונת לוח
           </button>
-          <span style="margin: 0 8px; color: #8c82a8;">או</span>
-          <button class="btn btn-outline" onclick="loadSampleWhiteboardImage()">
-            🖼️ טען את תמונת ההדגמה
-          </button>
+
         </div>
 
         <!-- Preview of uploaded image -->
@@ -722,7 +566,7 @@
     <div class="modal-content" style="max-width: 460px; text-align: center;">
       <div class="modal-header" style="justify-content: center; position: relative;">
         <h2 style="color: #fff; font-size: 1.35rem;">🎯 התחלת בוחן באנגלית</h2>
-        <button class="modal-close" style="position: absolute; left: 0; top: 0;" onclick="closeQuizSelectModal()">✕</button>
+        <button aria-label="סגור חלון" class="modal-close" style="position: absolute; left: 0; top: 0;" onclick="closeQuizSelectModal()">✕</button>
       </div>
 
       <p style="color: #c9bfeb; margin: 12px 0 18px; font-size: 0.95rem;">
@@ -730,7 +574,7 @@
       </p>
 
       <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-        <input type="number" id="quiz-number-input" class="form-control" placeholder="למשל: 1" min="1" style="text-align: center; font-size: 1.3rem; font-weight: 700;" onkeydown="if(event.key==='Enter') goToQuizFromInput()">
+        <input type="number" id="quiz-number-input" aria-label="מספר בוחן" class="form-control" placeholder="למשל: 1" min="1" style="text-align: center; font-size: 1.3rem; font-weight: 700;" onkeydown="if(event.key==='Enter') goToQuizFromInput()">
         <button class="btn btn-primary" style="padding: 10px 20px; font-size: 1.05rem; white-space: nowrap;" onclick="goToQuizFromInput()">
           כניסה לבוחן
         </button>
@@ -753,8 +597,9 @@
   <div class="modal-backdrop" id="auth-modal">
     <div class="modal-content" style="max-width: 400px; text-align: center;">
       <h2 style="margin-bottom: 20px; color: #fff;">כניסת מורה</h2>
+      <p id="auth-error" role="alert" style="color:#ff9fbb"></p>
       <div class="form-group">
-        <input type="password" id="admin-pin-input" class="form-control" style="text-align: center; font-size: 1.5rem; letter-spacing: 4px;" placeholder="••••" onkeydown="if(event.key==='Enter') verifyAdminPin()">
+        <input type="password" id="admin-pin-input" aria-label="קוד גישה למורה" autocomplete="current-password" class="form-control" style="text-align: center; font-size: 1.5rem; letter-spacing: 4px;" placeholder="••••" onkeydown="if(event.key==='Enter') verifyAdminPin()">
       </div>
       <div style="display: flex; gap: 10px; margin-top: 16px;">
         <button class="btn btn-primary" style="flex: 1;" onclick="verifyAdminPin()">כניסה</button>
@@ -768,18 +613,18 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="quiz-modal-title">יצירת בוחן חדש</h2>
-        <button class="modal-close" onclick="document.getElementById('quiz-editor-modal').classList.remove('open')">✕</button>
+        <button aria-label="סגור חלון" class="modal-close" onclick="document.getElementById('quiz-editor-modal').classList.remove('open')">✕</button>
       </div>
 
       <input type="hidden" id="edit-quiz-id">
 
       <div class="form-group">
-        <label>כותרת הבוחן:</label>
+        <label for="edit-quiz-title">כותרת הבוחן:</label>
         <input type="text" id="edit-quiz-title" class="form-control" placeholder="למשל: בוחן אוצר מילים יחידה 2">
       </div>
 
       <div class="form-group">
-        <label>הוראות לתלמיד:</label>
+        <label for="edit-quiz-instructions">הוראות לתלמיד:</label>
         <input type="text" id="edit-quiz-instructions" class="form-control" value="הוראה: לתרגם לעברית">
       </div>
 
@@ -796,7 +641,7 @@
       </div>
 
       <div style="display: flex; gap: 12px; margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
-        <button class="btn btn-primary" style="flex: 1;" onclick="saveQuizFromModal()">שמור בוחן</button>
+        <button class="btn btn-primary" style="flex: 1;" id="save-quiz-btn" onclick="saveQuizFromModal()">שמור בוחן</button>
         <button class="btn btn-outline" onclick="document.getElementById('quiz-editor-modal').classList.remove('open')">ביטול</button>
       </div>
     </div>
@@ -810,7 +655,7 @@
           <h2 id="detail-student-name">פירוט תשובות תלמיד</h2>
           <p id="detail-quiz-title" style="color: #8c82a8; font-size: 0.95rem;"></p>
         </div>
-        <button class="modal-close" onclick="document.getElementById('detail-modal').classList.remove('open')">✕</button>
+        <button aria-label="סגור חלון" class="modal-close" onclick="document.getElementById('detail-modal').classList.remove('open')">✕</button>
       </div>
 
       <div id="detail-answers-list" style="max-height: 60vh; overflow-y: auto;">
@@ -823,6 +668,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>
