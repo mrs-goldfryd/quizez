@@ -80,9 +80,20 @@ test('invalid payloads, unavailable quizzes and failed writes never report succe
   const { call } = setup(t);
   assert.equal((await call('quizzes', 'POST', { title: 'Empty', vocabulary: [] }, true)).status, 400);
   assert.equal((await call('submissions', 'POST', { studentName: 'Student', quizId: 'seed', answers: [] })).status, 400);
-  assert.equal((await call('submissions', 'POST', { studentName: 'Student', quizId: 'missing', answers: ['x'] })).status, 404);
+  assert.equal((await call('submissions', 'POST', { studentName: 'Student Tester', quizId: 'missing', answers: ['x'] })).status, 404);
   const broken = createAPI({ store: { getWithMetadata() { throw new Error('Simulated unavailable storage'); } }, adminPin: 'test-secret' });
   assert.equal((await call('quizzes', 'POST', quiz('Failure'), true, broken)).status, 500);
+});
+
+test('one full name per quiz: single names rejected, duplicate full names rejected idempotently', async t => {
+  const { call } = setup(t);
+  assert.equal((await call('submissions', 'POST', { studentName: 'Single', quizId: 'seed', answers: ['שלום'] })).status, 400);
+  const first = await call('submissions', 'POST', { studentName: 'Dup Student', quizId: 'seed', answers: ['שלום'] });
+  assert.equal(first.status, 201);
+  const second = await call('submissions', 'POST', { studentName: '  dup   student ', quizId: 'seed', answers: ['שלום'] });
+  assert.equal(second.status, 409);
+  const retry = await call('submissions', 'POST', { studentName: 'Dup Student', quizId: 'seed', answers: ['שלום'], requestId: first.data.submission.id.replace(/^sub-/, '') });
+  assert.equal(retry.status, 200);
 });
 
 test('Netlify build publishes dashboard assets and excludes old root page and answer keys', () => {
@@ -91,6 +102,9 @@ test('Netlify build publishes dashboard assets and excludes old root page and an
   assert.ok(html.includes('id="landing-view"'));
   assert.ok(html.includes('id="header-admin-btn"'));
   assert.ok(html.includes('id="save-quiz-btn"'));
+  assert.ok(html.includes('student-name-card'));
+  assert.ok(readFileSync('dist/app.js', 'utf8').includes('shareQuizViaWhatsApp'));
+  assert.ok(readFileSync('dist/app.js', 'utf8').includes('updateNameGate'));
   assert.deepEqual(readdirSync('dist').sort(), ['app.js', 'index.html', 'style.css']);
   assert.match(readFileSync('netlify.toml', 'utf8'), /publish = "dist"/);
 });

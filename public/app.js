@@ -255,6 +255,43 @@ function switchScreen(screen) {
   }
 }
 
+// --- STUDENT NAME GATE: one full name first, single submission per name ---
+function isValidFullName(name) {
+  const clean = String(name || '').trim().replace(/\s+/g, ' ');
+  if (clean.length < 3 || clean.length > 60 || /[,;]/.test(clean)) return false;
+  return clean.split(' ').filter(Boolean).length >= 2;
+}
+
+function updateNameGate() {
+  const nameInput = document.getElementById('student-name');
+  const error = document.getElementById('student-name-error');
+  const ok = document.getElementById('student-name-ok');
+  const card = document.getElementById('student-name-card');
+  const questions = document.getElementById('questions-container');
+  const label = document.getElementById('questions-step-label');
+  const button = document.getElementById('submit-btn');
+  if (!nameInput) return false;
+  const value = nameInput.value.trim();
+  const valid = isValidFullName(value);
+  const touched = value.length > 0;
+  if (error) {
+    const showError = touched && !valid;
+    error.hidden = !showError;
+    if (showError) error.textContent = 'יש למלא שם מלא אחד — שם פרטי ושם משפחה (למשל: דניאל כהן).';
+  }
+  if (ok) ok.hidden = !valid;
+  if (card) card.classList.toggle('is-valid', valid);
+  if (questions) questions.classList.toggle('locked', !valid);
+  if (label) label.classList.toggle('locked', !valid);
+  [...document.querySelectorAll('.question-input')].forEach(input => { input.disabled = !valid || input.dataset.submitted === '1'; });
+  if (button && button.dataset.submitted !== '1') {
+    button.disabled = !valid;
+    if (!valid) button.textContent = 'קודם ממלאים שם מלא למעלה ←';
+    else if (button.textContent.includes('קודם')) button.textContent = 'הגש בוחן';
+  }
+  return valid;
+}
+
 // --- STUDENT VIEW LOGIC ---
 function renderStudentView() {
   currentView = 'student';
@@ -302,18 +339,34 @@ function renderStudentView() {
     container.appendChild(row);
   });
 
-  // Reset results and submit button
-  document.getElementById('student-name').value = '';
-  document.getElementById('student-name').disabled = false;
-  document.getElementById('submit-btn').disabled = false;
-  document.getElementById('submit-btn').innerText = 'הגש בוחן';
+  // Reset results and submit button — name first, questions locked until valid
+  const nameInput = document.getElementById('student-name');
+  nameInput.value = '';
+  nameInput.disabled = false;
+  const submitButton = document.getElementById('submit-btn');
+  submitButton.disabled = true;
+  submitButton.dataset.submitted = '';
+  submitButton.innerText = 'קודם ממלאים שם מלא למעלה ←';
   document.getElementById('result-area').style.display = 'none';
   document.getElementById('teacher-notification').style.display = 'none';
+  updateNameGate();
+  setTimeout(() => nameInput.focus({ preventScroll: false }), 100);
 }
 
 async function submitQuiz() {
   const nameInput = document.getElementById('student-name');
-  if (!nameInput.value.trim()) { showToast('יש למלא שם מלא לפני ההגשה.'); nameInput.focus(); return; }
+  const error = document.getElementById('student-name-error');
+  const cleanName = nameInput.value.trim().replace(/\s+/g, ' ');
+  if (!isValidFullName(cleanName)) {
+    nameInput.value = cleanName;
+    updateNameGate();
+    if (error) { error.hidden = false; error.textContent = 'חובה למלא קודם שם מלא אחד (שם פרטי ושם משפחה) — רק אז אפשר להגיש.'; }
+    showToast('חובה למלא קודם שם מלא (שם פרטי ושם משפחה).');
+    nameInput.focus();
+    document.getElementById('student-name-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  nameInput.value = cleanName;
   const button = document.getElementById('submit-btn');
   const inputs = [...document.querySelectorAll('.question-input')];
   button.disabled = true;
@@ -337,13 +390,28 @@ async function submitQuiz() {
     document.getElementById('score-text').textContent = `${submission.studentName}, ענית נכון על ${submission.correctCount} מתוך ${submission.total} שאלות.`;
     document.getElementById('result-area').style.display = 'block';
     document.getElementById('teacher-notification').style.display = 'block';
+    button.dataset.submitted = '1';
+    inputs.forEach(input => { input.dataset.submitted = '1'; });
     button.textContent = 'הבוחן הוגש בהצלחה!';
   } catch (error) {
     showToast(error.message);
-    button.disabled = false;
-    button.textContent = 'נסה להגיש שוב';
-    nameInput.disabled = false;
-    inputs.forEach(input => input.disabled = false);
+    button.dataset.submitted = '';
+    inputs.forEach(input => { input.dataset.submitted = ''; });
+    const duplicate = /כבר הגיש/.test(error.message || '');
+    if (duplicate && error) {
+      const nameError = document.getElementById('student-name-error');
+      if (nameError) { nameError.hidden = false; nameError.textContent = error.message; }
+      nameInput.disabled = false;
+      nameInput.focus();
+      document.getElementById('student-name-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      nameInput.disabled = false;
+    }
+    updateNameGate();
+    if (!duplicate) {
+      button.disabled = false;
+      button.textContent = 'נסה להגיש שוב';
+    }
   }
 }
 
@@ -577,6 +645,10 @@ async function loadQuizzesTab() {
           <button class="btn btn-sm btn-primary" onclick="copyQuizLink('${shareUrl}', ${num})">
             🔗 העתק קישור ישיר לתלמידים
           </button>
+          <button class="btn btn-sm btn-whatsapp" onclick="shareQuizViaWhatsApp('${shareUrl}', '${escapeHTML(q.title).replace(/'/g, "\\'")}', ${num})" aria-label="שתף בוואטסאפ">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.44-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.89 1.22 3.09.15.2 2.11 3.22 5.1 4.51.71.31 1.27.49 1.71.63.72.23 1.37.2 1.88.12.57-.09 1.76-.72 2-1.42.25-.7.25-1.29.18-1.42-.08-.13-.28-.2-.57-.35zm-5.42 7.4h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.85 9.85 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.9-9.88a9.83 9.83 0 0 1 9.88 9.89c0 5.45-4.44 9.88-9.89 9.88zm8.42-18.3A11.82 11.82 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.9c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.9 11.9 0 0 0 5.68 1.45h.01c6.55 0 11.89-5.34 11.89-11.9 0-3.18-1.24-6.16-3.47-8.42z"/></svg>
+            שתף בוואטסאפ
+          </button>
           <button class="btn btn-sm btn-outline" onclick="openEditQuizModal('${q.id}')">
             ✏️ ערוך
           </button>
@@ -595,6 +667,11 @@ function copyQuizLink(url, num) {
   }).catch(() => {
     prompt('העתק את הקישור הישיר לתלמיד:', url);
   });
+}
+
+function shareQuizViaWhatsApp(url, title, num) {
+  const text = `היי! מוזמנים לבוחן ${num ? num + ' ' : ''}״${title}״ באנגלית של Mrs. Goldfryd:\n${url}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
 }
 
 function openCreateQuizModal() {

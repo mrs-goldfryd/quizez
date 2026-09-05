@@ -153,11 +153,17 @@
             <h1 id="quiz-title" style="text-align: center; margin-bottom: 8px; font-size: 1.6rem; color: #fff;">בוחן אוצר מילים</h1>
             <div class="instructions-banner" id="quiz-instructions">הוראה: לתרגם לעברית</div>
 
-            <!-- Student Info -->
-            <div class="form-group" style="margin-bottom: 24px;">
-              <label for="student-name">שם התלמיד/ה המלא:</label>
-              <input type="text" id="student-name" class="form-control" placeholder="הכנס שם מלא (למשל: דניאל כהן)..." required>
+            <!-- Student Info : Step 1 — must fill full name first -->
+            <div class="student-name-card" id="student-name-card">
+              <div class="student-name-step">שלב 1 · חובה</div>
+              <label for="student-name">✏️ מה השם המלא שלך?</label>
+              <p class="student-name-hint">קודם ממלאים שם מלא אחד (שם פרטי + שם משפחה, למשל: דניאל כהן). רק אחר כך נפתחות השאלות. כל שם יכול להגיש כל בוחן פעם אחת בלבד.</p>
+              <input type="text" id="student-name" class="form-control student-name-input" placeholder="הכנס/י שם מלא — למשל: דניאל כהן" required autocomplete="name" maxlength="60" oninput="updateNameGate()">
+              <p class="student-name-error" id="student-name-error" role="alert" hidden></p>
+              <p class="student-name-ok" id="student-name-ok" hidden>✓ השם נקלט — אפשר לענות על השאלות וללחוץ „הגש בוחן“.</p>
             </div>
+
+            <div class="student-step-label" id="questions-step-label">שלב 2 · עונים על השאלות</div>
 
             <!-- Questions List -->
             <div id="questions-container">

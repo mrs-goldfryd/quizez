@@ -477,6 +477,84 @@ a { color: #ffbe3b; }
   background: #ff5588;
 }
 
+.btn-whatsapp {
+  background: #25d366;
+  color: #0b3b1f;
+}
+.btn-whatsapp:hover {
+  background: #1fb857;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+}
+
+/* ---------- STUDENT NAME GATE (Step 1 must come first) ---------- */
+.student-name-card {
+  margin-bottom: 20px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 190, 59, 0.08);
+  border: 2px solid rgba(255, 190, 59, 0.55);
+  box-shadow: 0 8px 22px rgba(255, 190, 59, 0.12);
+}
+.student-name-card.is-valid {
+  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(34, 197, 94, 0.08);
+  box-shadow: none;
+}
+.student-name-step {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #1e1735;
+  background: #ffbe3b;
+  border-radius: 9999px;
+  padding: 3px 12px;
+  margin-bottom: 10px;
+}
+.student-name-card label {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.student-name-hint {
+  font-size: 0.9rem;
+  color: #e8ddc2;
+  margin-bottom: 12px;
+  line-height: 1.7;
+}
+.student-name-input {
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 14px 16px;
+  border-width: 2px;
+}
+.student-name-error {
+  color: #ff9fbb;
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-top: 8px;
+}
+.student-name-error[hidden] { display: none; }
+.student-name-ok {
+  color: #4ade80;
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-top: 8px;
+}
+.student-name-ok[hidden] { display: none; }
+.student-step-label {
+  font-weight: 800;
+  color: #ddd5f3;
+  margin: 4px 0 10px;
+}
+.student-step-label.locked { color: #8c82a8; }
+#questions-container.locked {
+  opacity: 0.45;
+  filter: grayscale(0.4);
+}
+
 .btn-sm {
   padding: 6px 12px;
   font-size: 0.85rem;
