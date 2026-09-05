@@ -206,6 +206,8 @@ function renderLandingView() {
 function navigateToHome() {
   closeQuizSelectModal();
   document.getElementById('auth-modal')?.classList.remove('open');
+  document.getElementById('quiz-expiry-banner')?.setAttribute('hidden', '');
+  currentQuiz = null;
   const url = new URL(window.location);
   url.searchParams.delete('quiz');
   url.searchParams.delete('view');
@@ -405,6 +407,7 @@ function renderStudentView() {
   document.getElementById('teacher-notification').style.display = 'none';
   renderAvatarPicker();
   updateNameGate();
+  updateQuizExpiryBanner();
   setTimeout(() => nameInput.focus({ preventScroll: false }), 100);
 }
 
@@ -448,6 +451,7 @@ async function submitQuiz() {
     button.dataset.submitted = '1';
     inputs.forEach(input => { input.dataset.submitted = '1'; });
     button.textContent = 'הבוחן הוגש בהצלחה!';
+    refreshScoresLive();
   } catch (error) {
     showToast(error.message);
     button.dataset.submitted = '';
@@ -545,8 +549,18 @@ function switchAdminTab(tabName) {
 // Admin Tab 1: Scores & Leaderboard
 async function loadScoresTab() {
   submissions = await API.getSubmissions();
-  
-  // Calculate stats
+  updateScoresStats();
+  syncScoresFilterOptions();
+
+  // Populate Quiz Filters (scores table + leaderboard panel stay in sync)
+  const previousBoardFilter = document.getElementById('leaderboard-quiz-filter')?.value || '';
+  syncLeaderboardFilterOptions(previousBoardFilter);
+
+  renderSubmissionsTable();
+  renderLeaderboard();
+}
+
+function updateScoresStats() {
   const total = submissions.length;
   const avg = total > 0 ? Math.round(submissions.reduce((acc, s) => acc + (s.score || 0), 0) / total) : 0;
   const passCount = submissions.filter(s => (s.score || 0) >= 55).length;
@@ -557,16 +571,15 @@ async function loadScoresTab() {
   document.getElementById('stat-avg-score').innerText = avg;
   document.getElementById('stat-pass-rate').innerText = `${passRate}%`;
   document.getElementById('stat-top-score').innerText = topScore;
+}
 
-  // Populate Quiz Filters (scores table + leaderboard panel stay in sync)
-  const previousBoardFilter = document.getElementById('leaderboard-quiz-filter')?.value || '';
+function syncScoresFilterOptions() {
   const filterSelect = document.getElementById('scores-quiz-filter');
+  if (!filterSelect) return;
+  const current = filterSelect.value;
   filterSelect.innerHTML = `<option value="">כל הבחנים (${quizzes.length})</option>` +
     quizzes.map(q => `<option value="${q.id}">${escapeHTML(q.title)}</option>`).join('');
-  syncLeaderboardFilterOptions(previousBoardFilter);
-
-  renderSubmissionsTable();
-  renderLeaderboard();
+  if ([...filterSelect.options].some(o => o.value === current)) filterSelect.value = current;
 }
 
 function syncLeaderboardFilterOptions(preserve = '') {
@@ -593,6 +606,83 @@ function onLeaderboardFilterChange() {
   }
   renderSubmissionsTable();
   renderLeaderboard();
+}
+
+// --- LIVE REFRESH: new scores and publish changes appear without reload ---
+const LIVE_REFRESH_MS = 15000;
+let liveRefreshTimer = null;
+let isLiveRefreshing = false;
+
+function startLiveRefresh() {
+  if (liveRefreshTimer) return;
+  liveRefreshTimer = setInterval(() => {
+    if (document.hidden) return;
+    refreshLiveData();
+    refreshScoresLive();
+  }, LIVE_REFRESH_MS);
+}
+
+function quizListSignature(list) {
+  return (list || []).map(q => `${q.id}|${q.quizNumber}|${q.title}|${q.active}|${q.publishedUntil ?? ''}`).join('~');
+}
+
+// Polls the published quiz list: the homepage updates on its own when a quiz
+// is published or its timer runs out; a student inside an expired quiz is sent home.
+async function refreshLiveData() {
+  if (isLiveRefreshing) return;
+  isLiveRefreshing = true;
+  try {
+    const fresh = await API.getQuizzes();
+    const changed = quizListSignature(fresh) !== quizListSignature(quizzes);
+    quizzes = fresh;
+    if (changed) {
+      if (currentView === 'landing') renderQuizCards();
+      syncScoresFilterOptions();
+      syncLeaderboardFilterOptions(getLeaderboardQuizFilter());
+    }
+    if (currentView === 'student' && currentQuiz) {
+      const live = fresh.find(q => String(q.id) === String(currentQuiz.id));
+      const stillOpen = live && live.active !== false &&
+        (live.publishedUntil == null || Date.parse(live.publishedUntil) > Date.now());
+      if (!stillOpen) {
+        showToast('תוקף הבוחן פג או שהמורה הסתירה אותו.');
+        navigateToHome();
+      } else {
+        currentQuiz.publishedUntil = live.publishedUntil ?? currentQuiz.publishedUntil;
+        updateQuizExpiryBanner();
+      }
+    }
+  } catch { /* offline: keep showing the current state */ }
+  finally { isLiveRefreshing = false; }
+}
+
+// Polls submissions so a freshly submitted score lands on the leaderboard
+// without refresh. Never steals the teacher's filter/search text or modals.
+async function refreshScoresLive() {
+  if (!isAdminAuthenticated) return;
+  try {
+    submissions = await API.getSubmissions();
+    renderLeaderboard();
+    const scoresVisible = currentView === 'admin' && currentAdminTab === 'scores' &&
+      document.getElementById('admin-view')?.style.display !== 'none';
+    const teacherBusy = document.querySelector('.modal-backdrop.open') ||
+      document.activeElement?.id === 'scores-search';
+    if (scoresVisible && !teacherBusy) {
+      updateScoresStats();
+      renderSubmissionsTable();
+    }
+  } catch { /* offline: keep showing the current state */ }
+}
+
+// Shows how long a timed quiz stays open; called on render and on each poll.
+function updateQuizExpiryBanner() {
+  const banner = document.getElementById('quiz-expiry-banner');
+  if (!banner) return;
+  const until = currentQuiz?.publishedUntil ? Date.parse(currentQuiz.publishedUntil) : NaN;
+  if (Number.isNaN(until) || until <= Date.now()) { banner.hidden = true; banner.textContent = ''; return; }
+  const time = new Date(until).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+  banner.hidden = false;
+  banner.textContent = `⏳ הבוחן נסגר בעוד ${formatCountdown(until - Date.now())} (עד ${time}) — מומלץ להגיש בזמן.`;
 }
 
 function renderSubmissionsTable() {
@@ -721,18 +811,24 @@ async function loadQuizzesTab() {
     const num = q.quizNumber || (idx + 1);
     const wordCount = q.vocabulary ? q.vocabulary.length : 0;
     const shareUrl = getCleanQuizUrl(q);
+    const status = getPublishStatus(q);
     return `
       <div class="quiz-item-card">
         <div class="quiz-item-details">
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span class="quiz-badge-num">בוחן ${num}</span>
             <h3 style="margin: 0;">${escapeHTML(q.title)}</h3>
+            <span class="badge ${status.badgeClass}">${status.label}</span>
           </div>
           <p style="color: #8c82a8; font-size: 0.9rem; margin-top: 4px;">
             ${wordCount} מילים • ${escapeHTML(q.instructions || 'הוראה: לתרגם לעברית')} • קישור ישיר: <code style="color: #b76cff;">?quiz=${num}</code>
+            ${status.detail ? `<br><span class="publish-countdown" ${status.expiresAt ? `data-expires-at="${status.expiresAt}"` : ''}>${status.detail}</span>` : ''}
           </p>
         </div>
         <div class="quiz-actions">
+          ${status.published
+            ? `<button class="btn btn-sm btn-outline" onclick="hideQuizConfirm('${q.id}')">🙈 הסתר מהתלמידים</button>`
+            : `<button class="btn btn-sm btn-success" onclick="openPublishModal('${q.id}')">📢 פרסם</button>`}
           <button class="btn btn-sm btn-primary" onclick="copyQuizLink('${shareUrl}', ${num})">
             🔗 העתק קישור ישיר לתלמידים
           </button>
@@ -751,6 +847,127 @@ async function loadQuizzesTab() {
     `;
   }).join('');
 }
+
+// --- TIMED PUBLISHING ---
+function getPublishStatus(q) {
+  if (!q || q.active === false) return { published: false, badgeClass: 'badge-danger', label: '⚪ מוסתר', detail: '' };
+  if (q.publishedUntil == null) return { published: true, badgeClass: 'badge-success', label: '🟢 מפורסם לצמיתות', detail: '' };
+  const ms = Date.parse(q.publishedUntil) - Date.now();
+  if (Number.isNaN(ms) || ms <= 0) return { published: false, badgeClass: 'badge-danger', label: '⚪ מוסתר', detail: 'תוקף הפרסום פג — ניתן לפרסם מחדש.' };
+  return { published: true, badgeClass: 'badge-success', label: '🟢 מפורסם', detail: `זמין לתלמידים · נותר ${formatCountdown(ms)}`, expiresAt: q.publishedUntil };
+}
+
+function formatCountdown(ms) {
+  const totalMin = Math.max(1, Math.ceil(ms / 60000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return h > 0 ? `${h} שע׳ ${m} דק׳` : `${m} דק׳`;
+}
+
+let publishQuizId = null;
+
+function openPublishModal(quizId) {
+  const quiz = quizzes.find(q => q.id === quizId);
+  if (!quiz) return;
+  publishQuizId = quizId;
+  document.getElementById('publish-quiz-name').textContent = `״${quiz.title}״`;
+  document.getElementById('publish-hours').value = 2;
+  document.getElementById('publish-minutes').value = 30;
+  document.getElementById('publish-permanent').checked = false;
+  updatePublishPreview();
+  document.getElementById('publish-modal').classList.add('open');
+  setTimeout(() => document.getElementById('publish-hours').focus(), 150);
+}
+
+function closePublishModal() {
+  document.getElementById('publish-modal').classList.remove('open');
+  publishQuizId = null;
+}
+
+function readPublishDurationMs() {
+  const h = Math.max(0, Math.min(48, parseInt(document.getElementById('publish-hours').value, 10) || 0));
+  const m = Math.max(0, Math.min(59, parseInt(document.getElementById('publish-minutes').value, 10) || 0));
+  return (h * 60 + m) * 60000;
+}
+
+function updatePublishPreview() {
+  const permanent = document.getElementById('publish-permanent').checked;
+  const box = document.getElementById('publish-timer-box');
+  const preview = document.getElementById('publish-preview');
+  const confirmBtn = document.getElementById('publish-confirm-btn');
+  box.classList.toggle('disabled', permanent);
+  document.getElementById('publish-hours').disabled = permanent;
+  document.getElementById('publish-minutes').disabled = permanent;
+  if (permanent) {
+    preview.textContent = 'הבוחן יישאר זמין לתלמידים ללא הגבלת זמן.';
+    confirmBtn.disabled = false;
+    return;
+  }
+  const ms = readPublishDurationMs();
+  if (ms <= 0) {
+    preview.textContent = 'יש לבחור משך זמן גדול מאפס (שעות / דקות).';
+    confirmBtn.disabled = true;
+    return;
+  }
+  confirmBtn.disabled = false;
+  const until = new Date(Date.now() + ms);
+  const time = until.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+  const sameDay = until.toDateString() === new Date().toDateString();
+  const day = sameDay ? 'היום' : until.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+  preview.textContent = `הבוחן יהיה זמין עד ${day} בשעה ${time} (בעוד ${formatCountdown(ms)}).`;
+}
+
+async function confirmPublish() {
+  const quiz = quizzes.find(q => q.id === publishQuizId);
+  if (!quiz) { closePublishModal(); return; }
+  const permanent = document.getElementById('publish-permanent').checked;
+  let publishedUntil = null;
+  if (!permanent) {
+    const ms = readPublishDurationMs();
+    if (ms <= 0) { updatePublishPreview(); return; }
+    publishedUntil = new Date(Date.now() + ms).toISOString();
+  }
+  const btn = document.getElementById('publish-confirm-btn');
+  btn.disabled = true;
+  try {
+    quizzes = await API.saveQuiz({ ...quiz, active: true, publishedUntil });
+    closePublishModal();
+    await loadQuizzesTab();
+    renderQuizCards();
+    showToast(permanent ? 'הבוחן פורסם לצמיתות!' : 'הבוחן פורסם! התוקף יפוג אוטומטית.');
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function hideQuizConfirm(id) {
+  const quiz = quizzes.find(q => q.id === id);
+  if (!quiz) return;
+  if (!confirm(`להסתיר את הבוחן ״${quiz.title}״ מהתלמידים?`)) return;
+  try {
+    quizzes = await API.saveQuiz({ ...quiz, active: false, publishedUntil: null });
+    await loadQuizzesTab();
+    renderQuizCards();
+    showToast('הבוחן הוסתר מהתלמידים.');
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+// Refresh remaining-time labels in place; reload the list once one expires.
+setInterval(() => {
+  if (!isAdminAuthenticated || currentAdminTab !== 'quizzes') return;
+  if (document.getElementById('publish-modal')?.classList.contains('open')) return;
+  let expired = false;
+  document.querySelectorAll('.publish-countdown[data-expires-at]').forEach(el => {
+    const ms = Date.parse(el.dataset.expiresAt) - Date.now();
+    if (Number.isNaN(ms) || ms <= 0) { expired = true; return; }
+    el.textContent = `זמין לתלמידים · נותר ${formatCountdown(ms)}`;
+  });
+  if (expired) loadQuizzesTab();
+}, 30000);
 
 function copyQuizLink(url, num) {
   navigator.clipboard.writeText(url).then(() => {
@@ -1226,4 +1443,4 @@ window.addEventListener('keydown', event => {
 });
 
 // Run app on load
-window.addEventListener('DOMContentLoaded', () => { renderLeaderboard(); initApp(); });
+window.addEventListener('DOMContentLoaded', () => { renderLeaderboard(); initApp(); startLiveRefresh(); });

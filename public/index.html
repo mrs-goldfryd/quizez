@@ -154,6 +154,7 @@
 
             <h1 id="quiz-title" style="text-align: center; margin-bottom: 8px; font-size: 1.6rem; color: #fff;">בוחן אוצר מילים</h1>
             <div class="instructions-banner" id="quiz-instructions">הוראה: לתרגם לעברית</div>
+            <div class="quiz-expiry-banner" id="quiz-expiry-banner" role="status" hidden></div>
 
             <!-- Student Info : Step 1 — must fill full name first -->
             <div class="student-name-card" id="student-name-card">
@@ -644,6 +645,38 @@
       <div style="display: flex; gap: 12px; margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
         <button class="btn btn-primary" style="flex: 1;" id="save-quiz-btn" onclick="saveQuizFromModal()">שמור בוחן</button>
         <button class="btn btn-outline" onclick="document.getElementById('quiz-editor-modal').classList.remove('open')">ביטול</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Publish Quiz Modal (timed or permanent) -->
+  <div class="modal-backdrop" id="publish-modal">
+    <div class="modal-content" style="max-width: 430px; text-align: center;">
+      <div class="modal-header" style="justify-content: center; position: relative;">
+        <h2 style="color: #fff; font-size: 1.35rem;">📢 פרסום בוחן</h2>
+        <button aria-label="סגור חלון" class="modal-close" style="position: absolute; left: 0; top: 0;" onclick="closePublishModal()">✕</button>
+      </div>
+
+      <p id="publish-quiz-name" style="color: #c9bfeb; margin: 4px 0 18px; font-size: 0.95rem;"></p>
+
+      <div class="publish-timer-box" id="publish-timer-box">
+        <span class="publish-timer-label">הבוחן יהיה זמין למשך:</span>
+        <div class="publish-timer-inputs" dir="ltr">
+          <label class="publish-time-field">HH<input type="number" id="publish-hours" class="form-control publish-time-input" min="0" max="48" step="1" value="2" aria-label="שעות" oninput="updatePublishPreview()"></label>
+          <span class="publish-time-sep" aria-hidden="true">:</span>
+          <label class="publish-time-field">MM<input type="number" id="publish-minutes" class="form-control publish-time-input" min="0" max="59" step="1" value="30" aria-label="דקות" oninput="updatePublishPreview()"></label>
+        </div>
+        <p class="publish-preview" id="publish-preview" role="status"></p>
+      </div>
+
+      <label class="publish-permanent-row">
+        <input type="checkbox" id="publish-permanent" onchange="updatePublishPreview()">
+        <span>פרסם לצמיתות (ללא הגבלת זמן)</span>
+      </label>
+
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button class="btn btn-primary" style="flex: 1;" id="publish-confirm-btn" onclick="confirmPublish()">פרסם</button>
+        <button class="btn btn-outline" onclick="closePublishModal()">ביטול</button>
       </div>
     </div>
   </div>

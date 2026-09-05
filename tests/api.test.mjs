@@ -96,6 +96,30 @@ test('one full name per quiz: single names rejected, duplicate full names reject
   assert.equal(retry.status, 200);
 });
 
+test('timed publishing hides quizzes from students after expiry', async t => {
+  const { call } = setup(t);
+  const future = new Date(Date.now() + 2.5 * 3600 * 1000).toISOString();
+  const past = new Date(Date.now() - 60000).toISOString();
+  assert.equal((await call('quizzes', 'POST', { ...quiz('Timed'), id: 'seed', publishedUntil: 'not-a-date' }, true)).status, 400);
+  const published = await call('quizzes', 'POST', { ...quiz('Timed'), id: 'seed', publishedUntil: future }, true);
+  assert.equal(published.status, 200);
+  assert.equal(published.data.quizzes[0].publishedUntil, future);
+  assert.equal((await call('quizzes')).data.length, 1);
+  assert.equal((await call('quizzes')).data[0].publishedUntil, future);
+  const submitOpen = await call('submissions', 'POST', { studentName: 'Timed Student', quizId: 'seed', answers: ['שלום'] });
+  assert.equal(submitOpen.status, 201);
+  const expired = await call('quizzes', 'POST', { ...quiz('Timed'), id: 'seed', publishedUntil: past }, true);
+  assert.equal(expired.status, 200);
+  assert.deepEqual((await call('quizzes')).data, []);
+  assert.equal((await call('submissions', 'POST', { studentName: 'Late Student', quizId: 'seed', answers: ['שלום'] })).status, 404);
+  const permanent = await call('quizzes', 'POST', { ...quiz('Timed'), id: 'seed', publishedUntil: null }, true);
+  assert.equal(permanent.status, 200);
+  assert.equal((await call('quizzes')).data.length, 1);
+  const hidden = await call('quizzes', 'POST', { ...quiz('Timed'), id: 'seed', active: false }, true);
+  assert.equal(hidden.status, 200);
+  assert.deepEqual((await call('quizzes')).data, []);
+});
+
 test('student avatar is stored when valid and dropped when invalid', async t => {
   const { call } = setup(t);
   const good = await call('submissions', 'POST', { studentName: 'Avatar Student', quizId: 'seed', answers: ['שלום'], avatar: 'assets/avatar-07.png' });
@@ -116,12 +140,21 @@ test('Netlify build publishes dashboard assets and excludes old root page and an
   assert.ok(html.includes('id="avatar-grid"'));
   assert.ok(html.includes('id="leaderboard-quiz-filter"'));
   assert.ok(html.includes('id="podium-1-names"'));
+  assert.ok(html.includes('id="publish-modal"'));
+  assert.ok(html.includes('id="publish-hours"'));
+  assert.ok(html.includes('id="publish-permanent"'));
   assert.ok(html.includes('rel="icon"'));
   assert.ok(html.includes('/favicon.png'));
   assert.ok(readFileSync('dist/app.js', 'utf8').includes('shareQuizViaWhatsApp'));
   assert.ok(readFileSync('dist/app.js', 'utf8').includes('updateNameGate'));
   assert.ok(readFileSync('dist/app.js', 'utf8').includes('groupByScore'));
   assert.ok(readFileSync('dist/app.js', 'utf8').includes('renderAvatarPicker'));
+  assert.ok(readFileSync('dist/app.js', 'utf8').includes('openPublishModal'));
+  assert.ok(readFileSync('dist/app.js', 'utf8').includes('getPublishStatus'));
+  assert.ok(readFileSync('dist/app.js', 'utf8').includes('refreshLiveData'));
+  assert.ok(readFileSync('dist/app.js', 'utf8').includes('refreshScoresLive'));
+  assert.ok(readFileSync('dist/app.js', 'utf8').includes('startLiveRefresh'));
+  assert.ok(html.includes('id="quiz-expiry-banner"'));
   assert.deepEqual(readdirSync('dist').sort(), ['app.js', 'assets', 'favicon.png', 'index.html', 'style.css']);
   assert.equal(readdirSync('dist/assets').filter(f => f.endsWith('.png')).length, 24);
   assert.match(readFileSync('netlify.toml', 'utf8'), /publish = "dist"/);

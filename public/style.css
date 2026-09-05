@@ -487,6 +487,94 @@ a { color: #ffbe3b; }
   box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
 }
 
+/* ---------- PUBLISH QUIZ MODAL ---------- */
+.publish-timer-box {
+  background: rgba(255, 190, 59, 0.08);
+  border: 1.5px solid rgba(255, 190, 59, 0.4);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  transition: opacity 0.2s;
+}
+
+.publish-timer-box.disabled {
+  opacity: 0.45;
+}
+
+.publish-timer-label {
+  display: block;
+  font-weight: 800;
+  color: #ffbe3b;
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+}
+
+.publish-timer-inputs {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+}
+
+.publish-time-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8c82a8;
+}
+
+.publish-time-input {
+  width: 84px;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+  padding: 8px 6px;
+}
+
+.publish-time-sep {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #ffbe3b;
+  padding-bottom: 8px;
+}
+
+.publish-preview {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #c9bfeb;
+  margin-top: 12px;
+  min-height: 1.4em;
+}
+
+.publish-permanent-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #ddd5f3;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.publish-permanent-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #ffbe3b;
+  cursor: pointer;
+}
+
+.publish-countdown {
+  color: #4ade80;
+  font-weight: 700;
+}
+
 /* ---------- STUDENT NAME GATE (Step 1 must come first) ---------- */
 .student-name-card {
   margin-bottom: 20px;
@@ -624,6 +712,20 @@ select.form-control option {
   text-align: center;
   margin-bottom: 20px;
 }
+
+.quiz-expiry-banner {
+  background: rgba(255, 190, 59, 0.12);
+  border: 1.5px solid rgba(255, 190, 59, 0.55);
+  color: #ffd97a;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.quiz-expiry-banner[hidden] { display: none; }
 
 /* ---------- QUESTION ROWS ---------- */
 .question-row {
