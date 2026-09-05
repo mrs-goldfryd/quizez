@@ -1,0 +1,37 @@
+[
+  {
+    "id": "vocab-unit-1",
+    "quizNumber": 1,
+    "title": "בוחן אוצר מילים - יחידה 1",
+    "instructions": "הוראה: לתרגם לעברית",
+    "active": true,
+    "createdAt": "2026-09-03T10:00:00.000Z",
+    "vocabulary": [
+      { "word": "arrive", "answers": ["להגיע"] },
+      { "word": "appear", "answers": ["להופיע"] },
+      { "word": "use", "answers": ["להשתמש"] },
+      { "word": "help", "answers": ["לעזור"] },
+      { "word": "what", "answers": ["מה"] },
+      { "word": "where", "answers": ["איפה", "היכן"] },
+      { "word": "why", "answers": ["למה", "מדוע"] },
+      { "word": "who", "answers": ["מי"] },
+      { "word": "when", "answers": ["מתי", "כאשר"] },
+      { "word": "work", "answers": ["לעבוד", "עבודה"] },
+      { "word": "want", "answers": ["לרצות"] },
+      { "word": "think", "answers": ["לחשוב"] },
+      { "word": "make", "answers": ["להכין", "לעשות"] },
+      { "word": "live", "answers": ["לחיות", "לגור"] },
+      { "word": "leave", "answers": ["לעזוב"] },
+      { "word": "cook", "answers": ["לבשל"] },
+      { "word": "do", "answers": ["לעשות"] },
+      { "word": "give", "answers": ["לתת"] },
+      { "word": "get", "answers": ["לקבל", "להשיג"] },
+      { "word": "become", "answers": ["להפוך ל", "להפוך להיות", "להיות"] },
+      { "word": "about", "answers": ["אודות", "על", "בערך"] },
+      { "word": "can", "answers": ["יכול"] },
+      { "word": "should", "answers": ["צריך", "כדאי", "אמור"] },
+      { "word": "may / might", "answers": ["עשוי", "עלול", "אולי"] },
+      { "word": "according to", "answers": ["לפי", "בהתאם ל"] }
+    ]
+  }
+]

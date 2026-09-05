@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>בוחן אוצר מילים באנגלית</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            background: white;
+            padding: 20px 30px;
+            margin: 0 auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .instructions {
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 20px;
+            background-color: #e9f5ff;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .student-info {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        .student-info label {
+            font-size: 1.1em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        .student-info input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .question {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .question label {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            width: 40%;
+            text-align: left;
+            direction: ltr;
+        }
+        .question input {
+            width: 55%;
+            padding: 8px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .correct { background-color: #d4edda; border-color: #c3e6cb !important; }
+        .incorrect { background-color: #f8d7da; border-color: #f5c6cb !important; }
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover { background-color: #0056b3; }
+        #result {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+        .teacher-msg {
+            color: #28a745;
+            font-size: 0.9em;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>בוחן אוצר מילים</h1>
+    <div class="instructions">הוראה: לתרגם לעברית</div>
+
+    <div class="student-info">
+        <label for="student-name">שם התלמיד/ה:</label>
+        <input type="text" id="student-name" placeholder="הכנס שם מלא..." required>
+    </div>
+    
+    <div id="quiz-form"></div>
+    
+    <button id="submit-btn" onclick="submitQuiz()">הגש בוחן</button>
+    <div id="result"></div>
+    <div id="teacher-message" class="teacher-msg">הציון נשלח בהצלחה למורה!</div>
+</div>
+
+<script>
+    const vocabulary = [
+        { word: "arrive", answers: ["להגיע"] },
+        { word: "appear", answers: ["להופיע"] },
+        { word: "use", answers: ["להשתמש"] },
+        { word: "help", answers: ["לעזור"] },
+        { word: "what", answers: ["מה"] },
+        { word: "where", answers: ["איפה", "היכן"] },
+        { word: "why", answers: ["למה", "מדוע"] },
+        { word: "who", answers: ["מי"] },
+        { word: "when", answers: ["מתי", "כאשר"] },
+        { word: "work", answers: ["לעבוד", "עבודה"] },
+        { word: "want", answers: ["לרצות"] },
+        { word: "think", answers: ["לחשוב"] },
+        { word: "make", answers: ["להכין", "לעשות"] },
+        { word: "live", answers: ["לחיות", "לגור"] },
+        { word: "leave", answers: ["לעזוב"] },
+        { word: "cook", answers: ["לבשל"] },
+        { word: "do", answers: ["לעשות"] },
+        { word: "give", answers: ["לתת"] },
+        { word: "get", answers: ["לקבל", "להשיג"] },
+        { word: "become", answers: ["להפוך ל", "להפוך להיות", "להיות"] },
+        { word: "about", answers: ["אודות", "על", "בערך"] },
+        { word: "can", answers: ["יכול"] },
+        { word: "should", answers: ["צריך", "כדאי", "אמור"] },
+        { word: "may / might", answers: ["עשוי", "עלול", "אולי"] },
+        { word: "according to", answers: ["לפי", "בהתאם ל"] }
+    ];
+
+    const formContainer = document.getElementById('quiz-form');
+    vocabulary.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'question';
+        div.innerHTML = `
+            <label>${index + 1}. ${item.word}</label>
+            <input type="text" id="q${index}" placeholder="הכנס פירוש כאן...">
+        `;
+        formContainer.appendChild(div);
+    });
+
+    function submitQuiz() {
+        const nameInput = document.getElementById('student-name');
+        const studentName = nameInput.value.trim();
+
+        if (!studentName) {
+            alert("אנא הכנס את שמך לפני הגשת הבוחן.");
+            nameInput.focus();
+            return;
+        }
+
+        let correctCount = 0;
+        const total = vocabulary.length;
+
+        vocabulary.forEach((item, index) => {
+            const inputField = document.getElementById(`q${index}`);
+            const studentAnswer = inputField.value.trim();
+            const isCorrect = item.answers.some(ans => studentAnswer === ans);
+
+            if (isCorrect) {
+                correctCount++;
+                inputField.classList.remove('incorrect');
+                inputField.classList.add('correct');
+            } else {
+                inputField.classList.remove('correct');
+                inputField.classList.add('incorrect');
+            }
+            inputField.disabled = true;
+        });
+
+        nameInput.disabled = true;
+        const score = Math.round((correctCount / total) * 100);
+        
+        // הצגת הציון לתלמיד
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = `שלום ${studentName}, הציון שלך הוא: ${score}/100 (${correctCount} מתוך ${total} תשובות נכונות)`;
+        resultDiv.style.color = score >= 55 ? 'green' : 'red';
+
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerText = "שולח ציון למורה...";
+
+        // שליחת הנתונים למייל של המורה באופן אוטומטי
+        fetch("https://formsubmit.co/ajax/dgoldfryd@gmail.com", {
+            method: "POST",
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                "_subject": `ציון בוחן אנגלית: ${studentName}`,
+                "שם התלמיד": studentName,
+                "ציון סופי": `${score} / 100`,
+                "תשובות נכונות": `${correctCount} מתוך ${total}`,
+                "תאריך הגשה": new Date().toLocaleString("he-IL")
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('teacher-message').style.display = 'block';
+            submitBtn.innerText = "הבוחן הוגש בהצלחה";
+        })
+        .catch(error => {
+            console.error('Error sending grade:', error);
+            document.getElementById('teacher-message').innerText = "הציון הוצג לתלמיד (ארעה שגיאה בשליחה למייל).";
+            document.getElementById('teacher-message').style.color = 'orange';
+            document.getElementById('teacher-message').style.display = 'block';
+            submitBtn.innerText = "הבוחן הוגש";
+        });
+    }
+</script>
+
+</body>
+</html>

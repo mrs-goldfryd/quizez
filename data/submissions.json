@@ -1,0 +1,66 @@
+[
+  {
+    "id": "sub-1788428391085",
+    "studentName": "שירה אלון",
+    "quizId": "vocab-unit-1",
+    "quizTitle": "בוחן אוצר מילים - יחידה 1",
+    "score": 100,
+    "correctCount": 25,
+    "total": 25,
+    "answers": [
+      {
+        "word": "arrive",
+        "studentAnswer": "להגיע",
+        "isCorrect": true,
+        "expectedAnswers": [
+          "להגיע"
+        ]
+      },
+      {
+        "word": "appear",
+        "studentAnswer": "להופיע",
+        "isCorrect": true,
+        "expectedAnswers": [
+          "להופיע"
+        ]
+      }
+    ],
+    "submittedAt": "2026-09-03T09:39:51.085Z"
+  },
+  {
+    "id": "sub-1788428331316",
+    "studentName": "יוסי כהן",
+    "quizId": "vocab-unit-1",
+    "quizTitle": "בוחן אוצר מילים - יחידה 1",
+    "score": 92,
+    "correctCount": 23,
+    "total": 25,
+    "answers": [
+      {
+        "word": "arrive",
+        "studentAnswer": "להגיע",
+        "isCorrect": true,
+        "expectedAnswers": [
+          "להגיע"
+        ]
+      },
+      {
+        "word": "appear",
+        "studentAnswer": "להופיע",
+        "isCorrect": true,
+        "expectedAnswers": [
+          "להופיע"
+        ]
+      },
+      {
+        "word": "cook",
+        "studentAnswer": "לאכול",
+        "isCorrect": false,
+        "expectedAnswers": [
+          "לבשל"
+        ]
+      }
+    ],
+    "submittedAt": "2026-09-03T09:38:51.316Z"
+  }
+]

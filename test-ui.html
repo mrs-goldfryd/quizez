@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Peers Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: #554471;
+    background-image: 
+      radial-gradient(ellipse at 10% 20%, rgba(138, 108, 179, 0.45) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 80%, rgba(118, 92, 163, 0.4) 0%, transparent 60%),
+      radial-gradient(circle at 50% 50%, #5d4a7c 0%, #4a3a63 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 20px;
+    color: #fff;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Subtle background contour rings */
+  .bg-lines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.25;
+    background-image: 
+      radial-gradient(circle at 10% 30%, transparent 300px, rgba(255,255,255,0.2) 301px, transparent 302px),
+      radial-gradient(circle at 10% 30%, transparent 600px, rgba(255,255,255,0.15) 601px, transparent 602px),
+      radial-gradient(circle at 90% 70%, transparent 400px, rgba(255,255,255,0.2) 401px, transparent 402px);
+  }
+
+  /* Main Dashboard Container */
+  .dashboard {
+    position: relative;
+    width: 1200px;
+    max-width: 100%;
+    height: 840px;
+    background-color: #1e1735;
+    border-radius: 36px;
+    box-shadow: 0 40px 100px rgba(17, 10, 35, 0.75), 0 10px 30px rgba(0, 0, 0, 0.4);
+    display: grid;
+    grid-template-columns: 110px 1fr 290px;
+    overflow: hidden;
+    z-index: 10;
+  }
+
+  /* ---------------- SIDEBAR ---------------- */
+  .sidebar {
+    background-color: #1c1532;
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 36px 0 28px;
+    justify-content: space-between;
+    z-index: 20;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #fff;
+    position: relative;
+  }
+  .logo span.c-badge {
+    position: absolute;
+    top: -2px;
+    right: -10px;
+    font-size: 8px;
+    font-weight: 700;
+    border: 1.5px solid #fff;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 34px;
+    align-items: center;
+    margin-top: -30px;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #8c82a8;
+    font-size: 9.5px;
+    font-weight: 600;
+    text-align: center;
+    width: 78px;
+    gap: 7px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .nav-item:hover, .nav-item.active {
+    color: #ffffff;
+  }
+
+  .nav-item .icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+  }
+
+  .nav-item.active .icon-box {
+    background-color: #2e264b;
+    color: #ffbe3b;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.35);
+  }
+
+  .sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .user-name-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .user-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .user-avatar-sm {
+    width: 24px;
+    height: 24px;
+    background: #ffb834;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #1e1735;
+    font-size: 13px;
+  }
+
+  .flag-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #012169;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* ---------------- MAIN CONTENT ---------------- */
+  .main-content {
+    background-color: #1e1735;
+    padding: 34px 28px 24px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .page-title {
+    font-size: 23px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #796f96;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 6px 14px;
+    border-radius: 20px;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .search-wrap:hover {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+  }
+
+  /* Grid Layout for Peer Day Cards */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 216px);
+    gap: 16px;
+    position: relative;
+  }
+
+  /* ---------------- PEER DAY CARDS (ANIMATED) ---------------- */
+  .peer-card {
+    background: #272042;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 22px;
+    padding: 16px 14px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 8px 20px rgba(12, 7, 26, 0.25);
+    cursor: pointer;
+    user-select: none;
+    transform-origin: center center;
+    
+    /* Smooth physical spring transition */
+    transition: 
+      transform 0.4s cubic-bezier(0.34, 1.45, 0.64, 1),
+      box-shadow 0.4s cubic-bezier(0.34, 1.45, 0.64, 1),
+      background-color 0.3s ease,
+      border-color 0.3s ease;
+    z-index: 1;
+  }
+
+  /* HOVER ANIMATION: Elevates, tilts -6deg & drops deep shadow like the 29 Mar card */
+  .peer-card:hover {
+    transform: translateY(-12px) rotate(-6deg) scale(1.045);
+    background-color: #382d5a;
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 
+      0 26px 42px rgba(10, 5, 24, 0.7),
+      0 6px 16px rgba(0, 0, 0, 0.35);
+    z-index: 30;
+  }
+
+  /* SPECIFIC CARD: 29 Mar (John Wick) - Naturally tilted by default */
+  .peer-card.card-29-mar {
+    background: #392e5c;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transform: rotate(-6deg) translate(-2px, 8px);
+    box-shadow: 0 20px 32px rgba(10, 5, 24, 0.65);
+    z-index: 20;
+  }
+
+  .peer-card.card-29-mar .date-num {
+    color: #ff77a8;
+  }
+
+  .peer-card.card-29-mar .card-pill-tag {
+    background: #eed559;
+    color: #21193a;
+    font-weight: 700;
+  }
+
+  /* 29 Mar card animates even higher on hover */
+  .peer-card.card-29-mar:hover {
+    transform: translateY(-12px) rotate(-9deg) scale(1.06);
+    box-shadow: 
+      0 32px 50px rgba(10, 5, 24, 0.8),
+      0 8px 20px rgba(0, 0, 0, 0.45);
+    z-index: 35;
+  }
+
+  /* Date Badges */
+  .date-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    text-align: right;
+    line-height: 1.1;
+  }
+
+  .date-num {
+    font-size: 15px;
+    font-weight: 700;
+    color: #b76cff;
+    transition: color 0.3s ease;
+  }
+
+  .date-month {
+    font-size: 9.5px;
+    color: #8c80ad;
+    font-weight: 500;
+  }
+
+  /* Avatars */
+  .avatar-box {
+    width: 68px;
+    height: 68px;
+    border-radius: 20px;
+    background: #ffb834;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
+    margin-top: 4px;
+    margin-bottom: 11px;
+    flex-shrink: 0;
+    transition: transform 0.35s ease;
+  }
+
+  .peer-card:hover .avatar-box {
+    transform: scale(1.04);
+  }
+
+  .peer-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 3px;
+    text-align: center;
+  }
+
+  .peer-role {
+    font-size: 10px;
+    color: #ffbe3b;
+    font-weight: 600;
+    margin-bottom: 7px;
+  }
+
+  .peer-loc {
+    font-size: 9.5px;
+    color: #8f85b0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    line-height: 1.25;
+  }
+
+  .peer-loc-line {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  /* Bottom lesson pill in cards */
+  .card-pill-tag {
+    position: absolute;
+    bottom: 0;
+    left: 10px;
+    right: 10px;
+    height: 18px;
+    background: rgba(255, 190, 59, 0.15);
+    border: 1px solid rgba(255, 190, 59, 0.35);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 8px;
+    color: #e5b045;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ---------------- FEATURED YELLOW CARD ---------------- */
+  .featured-card {
+    background: linear-gradient(145deg, #ffc83b, #ffb327);
+    border-radius: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 16px 14px;
+    color: #21193a;
+    box-shadow: 0 12px 30px rgba(255, 184, 52, 0.3);
+    overflow: hidden;
+    cursor: pointer;
+    transform-origin: center center;
+    transition: 
+      transform 0.4s cubic-bezier(0.34, 1.45, 0.64, 1),
+      box-shadow 0.4s cubic-bezier(0.34, 1.45, 0.64, 1);
+    z-index: 2;
+  }
+
+  .featured-card:hover {
+    transform: translateY(-12px) rotate(4deg) scale(1.045);
+    box-shadow: 0 28px 45px rgba(255, 184, 52, 0.45);
+    z-index: 30;
+  }
+
+  .featured-card .music-note {
+    position: absolute;
+    color: #ff7f99;
+    font-size: 16px;
+    opacity: 0.9;
+    transition: transform 0.4s ease;
+  }
+
+  .featured-card:hover .note-1 {
+    transform: rotate(-30deg) scale(1.2);
+  }
+  .featured-card:hover .note-2 {
+    transform: rotate(30deg) scale(1.2);
+  }
+
+  .note-1 { top: 14px; left: 16px; transform: rotate(-15deg); }
+  .note-2 { top: 46%; right: 12px; transform: rotate(15deg); }
+
+  .play-circle-outer {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    transition: transform 0.35s ease;
+  }
+
+  .featured-card:hover .play-circle-outer {
+    transform: scale(1.08);
+  }
+
+  .play-circle-inner {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .play-triangle {
+    width: 0;
+    height: 0;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    border-left: 12px solid #1e1735;
+    margin-left: 3px;
+  }
+
+  .featured-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.3;
+    color: #1e1735;
+    margin-bottom: 8px;
+  }
+
+  .featured-sub {
+    font-size: 10px;
+    font-weight: 600;
+    color: #5c471f;
+  }
+
+  /* ---------------- LEADERBOARD ---------------- */
+  .leaderboard {
+    background: #1e1735;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    border-left: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .podium-section {
+    background-color: #ffbe3b;
+    height: 345px;
+    position: relative;
+    padding: 24px 20px 10px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0 0 45px 45px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    z-index: 10;
+  }
+
+  .leaderboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+    margin-bottom: 26px;
+  }
+
+  .trophy-splash {
+    position: absolute;
+    left: -28px;
+    top: -30px;
+    width: 85px;
+    pointer-events: none;
+  }
+
+  .leaderboard-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: #1e1735;
+  }
+
+  .podium-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    align-items: flex-end;
+    height: 100%;
+    gap: 8px;
+    position: relative;
+    padding-bottom: 12px;
+  }
+
+  .podium-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+
+  .podium-percent {
+    font-size: 13px;
+    font-weight: 800;
+    color: #1e1735;
+    margin-bottom: 6px;
+  }
+
+  .rank-star {
+    position: relative;
+    z-index: 5;
+    margin-bottom: -12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .rank-star svg {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  }
+
+  .rank-num {
+    position: absolute;
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .podium-block {
+    width: 100%;
+    background-color: #21193a;
+    border-radius: 18px 18px 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 18px;
+    position: relative;
+    transition: transform 0.25s ease;
+  }
+
+  .podium-col:hover .podium-block {
+    transform: translateY(-4px);
+  }
+
+  .podium-col.rank-1 .podium-block { height: 165px; z-index: 3; }
+  .podium-col.rank-2 .podium-block { height: 128px; z-index: 2; }
+  .podium-col.rank-3 .podium-block { height: 108px; z-index: 2; }
+
+  .podium-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: #ffbe3b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .podium-col.rank-1 .podium-avatar {
+    background: #ffb834;
+    font-weight: 800;
+    color: #1e1735;
+    font-size: 18px;
+  }
+
+  .podium-name {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    line-height: 1.2;
+    padding: 0 4px;
+  }
+
+  /* Leaderboard Lower List */
+  .leaderboard-list {
+    flex: 1;
+    padding: 16px 22px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+
+  .list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11.5px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+
+  .list-row:hover {
+    background: rgba(255,255,255,0.05);
+  }
+
+  .list-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .star-rank-box {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8c82a8;
+  }
+
+  .star-rank-box span {
+    position: absolute;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .list-name {
+    font-weight: 600;
+    color: #ddd5f3;
+  }
+
+  .list-score {
+    font-weight: 700;
+    color: #c9bfeb;
+    font-size: 12px;
+  }
+
+  svg {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-lines"></div>
+
+<div class="dashboard">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      Quizez
+    </div>
+
+    <div class="nav-group">
+      <!-- Learning Plan -->
+      <div class="nav-item">
+        <div class="icon-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="6" cy="19" r="2"/>
+            <circle cx="18" cy="5" r="2"/>
+            <path d="M12 19h4.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H12"/>
+          </svg>
+        </div>
+        <span>My Learning Plan</span>
+      </div>
+
+      <!-- My Peers (Active) -->
+      <div class="nav-item active">
+        <div class="icon-box">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="8.5" cy="8" r="3.2" fill="#ff769f"/>
+            <path d="M3.5 17.5C3.5 14.8 5.8 13 8.5 13C11.2 13 13.5 14.8 13.5 17.5" stroke="#ff769f" stroke-width="2.2" stroke-linecap="round"/>
+            <circle cx="16" cy="9" r="2.8" fill="#ffbe3b"/>
+            <path d="M13 17C13.2 15 14.6 13.8 16.5 13.8C18.4 13.8 20 15 20 17" stroke="#ffbe3b" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span style="color: #fff;">My Peers</span>
+      </div>
+
+      <!-- Settings -->
+      <div class="nav-item">
+        <div class="icon-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </div>
+        <span>Settings</span>
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="user-name-tag">Nikitin</div>
+      <div class="user-badge-row">
+        <div class="user-avatar-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#21193a" stroke-width="4">
+            <path d="M4 20V4l16 16V4"/>
+          </svg>
+        </div>
+        <div class="flag-icon" title="United Kingdom">
+          <svg viewBox="0 0 60 30" width="24" height="16">
+            <path d="M0 0v30h60V0z" fill="#012169"/>
+            <path d="M0 0l60 30m0-30L0 30" stroke="#fff" stroke-width="6"/>
+            <path d="M0 0l60 30m0-30L0 30" stroke="#C8102E" stroke-width="4"/>
+            <path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/>
+            <path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CENTER CONTENT -->
+  <main class="main-content">
+    <div class="header-row">
+      <h1 class="page-title">My Peers</h1>
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span>Search</span>
+      </div>
+    </div>
+
+    <!-- Grid of Peers -->
+    <div class="cards-grid">
+      
+      <!-- Card 1: 19 Mar -->
+      <div class="peer-card">
+        <div class="date-badge">
+          <div class="date-num">19</div>
+          <div class="date-month">Mar</div>
+        </div>
+        <div class="avatar-box">
+          <svg width="54" height="54" viewBox="0 0 80 80" fill="none">
+            <path d="M22 36C22 25 30 16 40 16C50 16 58 25 58 36V52H22V36Z" fill="#201c3d"/>
+            <path d="M26 40C26 31 32 24 40 24C48 24 54 31 54 40V56C54 62 48 66 40 66C32 66 26 62 26 56V40Z" fill="#ffdfbb"/>
+            <path d="M32 20C32 20 22 20 20 30C18 40 24 40 24 40" stroke="#201c3d" stroke-width="3" fill="#201c3d"/>
+            <path d="M48 20C48 20 58 20 60 30C62 40 56 40 56 40" stroke="#201c3d" stroke-width="3" fill="#201c3d"/>
+            <circle cx="34" cy="44" r="2.5" fill="#201c3d"/>
+            <circle cx="46" cy="44" r="2.5" fill="#201c3d"/>
+            <path d="M37 54C39 56 41 56 43 54" stroke="#201c3d" stroke-width="2" stroke-linecap="round"/>
+            <path d="M20 78C20 68 28 64 40 64C52 64 60 68 60 78H20Z" fill="#ffffff"/>
+          </svg>
+        </div>
+        <div class="peer-name">Michael Kopfler</div>
+        <div class="peer-role">Sales Representative</div>
+        <div class="peer-loc">
+          <div class="peer-loc-line">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+            Berlin,
+          </div>
+          <div>Germany - Midwest</div>
+        </div>
+        <div class="card-pill-tag">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ffbe3b;margin-right:4px;"></span>
+          Meet the Patient - Lesson 1 &bull; M...
+        </div>
+      </div>
+
+      <!-- Card 2: 22 Mar -->
+      <div class="peer-card">
+        <div class="date-badge">
+          <div class="date-num">22</div>
+          <div class="date-month">Mar</div>
+        </div>
+        <div class="avatar-box">
+          <svg width="54" height="54" viewBox="0 0 80 80" fill="none">
+            <path d="M22 36C22 22 30 16 40 16C50 16 58 22 58 36V60H22V36Z" fill="#1b1735"/>
+            <path d="M26 38C26 30 32 24 40 24C48 24 54 30 54 38V54C54 60 48 64 40 64C32 64 26 60 26 54V38Z" fill="#ffdfbb"/>
+            <circle cx="34" cy="42" r="2.2" fill="#1b1735"/>
+            <circle cx="46" cy="42" r="2.2" fill="#1b1735"/>
+            <path d="M38 52C39.5 53.5 40.5 53.5 42 52" stroke="#1b1735" stroke-width="2" stroke-linecap="round"/>
+            <path d="M18 42C18 36 22 32 26 32" stroke="#1b1735" stroke-width="3" stroke-linecap="round"/>
+            <path d="M62 42C62 36 58 32 54 32" stroke="#1b1735" stroke-width="3" stroke-linecap="round"/>
+            <path d="M20 78C20 68 28 62 40 62C52 62 60 68 60 78H20Z" fill="#ffffff"/>
+          </svg>
+        </div>
+        <div class="peer-name">Alice Koller</div>
+        <div class="peer-role">Project Manager</div>
+        <div class="peer-loc">
+          <div class="peer-loc-line">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+            London,
+          </div>
+          <div>England - Northwest</div>
+        </div>
+        <div class="card-pill-tag">
+          <span style="color:#ffbe3b;font-weight:bold;margin-right:3px;">pographic</span> Anatomy - Lesson 5 &bull; Topo
+        </div>
+      </div>
+
+      <!-- Card 3: 23 Mar -->
+      <div class="peer-card">
+        <div class="date-badge">
+          <div class="date-num">23</div>
+          <div class="date-month">Mar</div>
+        </div>
+        <div class="avatar-box">
+          <svg width="54" height="54" viewBox="0 0 80 80" fill="none">
+            <path d="M24 28C24 18 31 16 40 16C49 16 56 18 56 28V36H24V28Z" fill="#262143"/>
+            <path d="M28 36C28 28 33 24 40 24C47 24 52 28 52 36V54C52 60 47 64 40 64C33 64 28 60 28 54V36Z" fill="#ffdfbb"/>
+            <circle cx="34" cy="42" r="5" stroke="#262143" stroke-width="2.5" fill="none"/>
+            <circle cx="46" cy="42" r="5" stroke="#262143" stroke-width="2.5" fill="none"/>
+            <line x1="39" y1="42" x2="41" y2="42" stroke="#262143" stroke-width="2.5"/>
+            <circle cx="34" cy="42" r="1.8" fill="#262143"/>
+            <circle cx="46" cy="42" r="1.8" fill="#262143"/>
+            <path d="M38 53C39.5 54.5 40.5 54.5 42 53" stroke="#262143" stroke-width="2" stroke-linecap="round"/>
+            <path d="M22 78C22 68 30 64 40 64C50 64 58 68 58 78H22Z" fill="#fff"/>
+          </svg>
+        </div>
+        <div class="peer-name">Peter Dinklage</div>
+        <div class="peer-role">Programmer</div>
+        <div class="peer-loc">
+          <div class="peer-loc-line">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5-2.5 2.5z"/>
+            </svg>
+            Dusseldorf,
+          </div>
+          <div>Germany - Midwest</div>
+        </div>
+        <div class="card-pill-tag">
+          <span style="background:#ffbe3b;color:#1e1735;padding:0 3px;border-radius:3px;font-weight:700;margin-right:4px;">Sawing</span> - Lesson 2 &bull; Preparation, Sawi
+        </div>
+      </div>
+
+      <!-- Card 4: 25 Mar -->
+      <div class="peer-card">
+        <div class="date-badge">
+          <div class="date-num">25</div>
+          <div class="date-month">Mar</div>
+        </div>
+        <div class="avatar-box" style="align-items:center; justify-content:center;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+            <path d="M5 19V5L19 19V5" stroke="#201938" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="peer-name">Nikitin Digital</div>
+        <div class="peer-role">CEO</div>
+        <div class="peer-loc">
+          <div class="peer-loc-line">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5-2.5 2.5z"/>
+            </svg>
+            Amsterdam,
+          </div>
+          <div>Netherlands - Northwest</div>
+        </div>
+        <div class="card-pill-tag">
+          Lesson 15 &bull;
+        </div>
+      </div>
+
+      <!-- Card 5: FEATURED YELLOW CARD -->
+      <div class="featured-card">
+        <div class="music-note note-1">&#9835;</div>
+        <div class="music-note note-2">&#9834;</div>
+        <div class="play-circle-outer">
+          <div class="play-circle-inner">
+            <div class="play-triangle"></div>
+          </div>
+        </div>
+        <div class="featured-title">Circulatory System<br>&amp; Blood Pressure</div>
+        <div class="featured-sub">Keep watching 00:30</div>
+      </div>
+
+      <!-- Card 6: 26 Mar -->
+      <div class="peer-card">
+        <div class="date-badge">
+          <div class="date-num">26</div>
+          <div class="date-month">Mar</div>
+        </div>
+        <div class="avatar-box">
+          <svg width="54" height="54" viewBox="0 0 80 80" fill="none">
+            <path d="M22 34C22 22 30 16 40 16C50 16 58 22 58 34V60H22V34Z" fill="#1b1735"/>
+            <path d="M26 38C26 30 32 24 40 24C48 24 54 30 54 38V54C54 60 48 64 40 64C32 64 26 60 26 54V38Z" fill="#ffdfbb"/>
+            <circle cx="34" cy="42" r="2.2" fill="#1b1735"/>
+            <circle cx="46" cy="42" r="2.2" fill="#1b1735"/>
+            <path d="M38 52C39.5 53.5 40.5 53.5 42 52" stroke="#1b1735" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="21" cy="44" r="3.5" stroke="#1b1735" stroke-width="2" fill="none"/>
+            <circle cx="59" cy="44" r="3.5" stroke="#1b1735" stroke-width="2" fill="none"/>
+            <path d="M20 78C20 68 28 62 40 62C52 62 60 68 60 78H20Z" fill="#ffffff"/>
+          </svg>
+        </div>
+        <div class="peer-name">Charlotte Helly</div>
+        <div class="peer-role">Project Manager</div>
+        <div class="peer-loc">
+          <div class="peer-loc-line">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5-2.5 2.5z"/>
+            </svg>
+            Madrid,
+          </div>
+          <div>Spain - Southwest</div>
+        </div>
+        <div class="card-pill-tag">
+          <span style="color:#ffbe3b;font-weight:bold;margin-right:4px;">Pathological Anatomy-</span> Lesson 49
+        </div>
+      </div>
+
+      <!-- Card 7: 29 Mar (John Wick) - SIGNATURE FLOATING CARD -->
+      <div class="peer-card card-29-mar">
+        <div class="date-badge">
+          <div class="date-num">29</div>
+          <div class="date-month">Mar</div>
+        </div>
+        <div class="avatar-box">
+          <svg width="54" height="54" viewBox="0 0 80 80" fill="none">
+            <path d="M24 26C24 16 31 16 40 16C49 16 56 16 56 26V36H24V26Z" fill="#201938"/>
+            <path d="M28 36C28 28 33 24 40 24C47 24 52 28 52 36V54C52 60 47 64 40 64C33 64 28 60 28 54V36Z" fill="#ffdfbb"/>
+            <circle cx="34" cy="42" r="5.2" stroke="#201938" stroke-width="2.5" fill="none"/>
+            <circle cx="46" cy="42" r="5.2" stroke="#201938" stroke-width="2.5" fill="none"/>
+            <line x1="39" y1="42" x2="41" y2="42" stroke="#201938" stroke-width="2.5"/>
+            <circle cx="34" cy="42" r="1.8" fill="#201938"/>
+            <circle cx="46" cy="42" r="1.8" fill="#201938"/>
+            <path d="M38 52C39.5 53.5 40.5 53.5 42 52" stroke="#201938" stroke-width="2" stroke-linecap="round"/>
+            <path d="M22 78C22 66 30 62 40 62C50 62 58 66 58 78H22Z" fill="#201938"/>
+          </svg>
+        </div>
+        <div class="peer-name">John Wick</div>
+        <div class="peer-role">Developer</div>
+        <div class="peer-loc">
+          <div class="peer-loc-line">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5-2.5 2.5z"/>
+            </svg>
+            Rome,
+          </div>
+          <div>Italy - South</div>
+        </div>
+        <div class="card-pill-tag">
+          Lesson 27 &bull; Potions or Injections - Less
+        </div>
+      </div>
+
+      <!-- Card 8: 30 Mar -->
+      <div class="peer-card">
+        <div class="date-badge">
+          <div class="date-num">30</div>
+          <div class="date-month">Mar</div>
+        </div>
+        <div class="avatar-box">
+          <svg width="54" height="54" viewBox="0 0 80 80" fill="none">
+            <path d="M26 36C26 28 32 24 40 24C48 24 54 28 54 36V54C54 60 48 64 40 64C32 64 26 60 26 54V36Z" fill="#ffdfbb"/>
+            <circle cx="34" cy="42" r="5" stroke="#262143" stroke-width="2.5" fill="none"/>
+            <circle cx="46" cy="42" r="5" stroke="#262143" stroke-width="2.5" fill="none"/>
+            <line x1="39" y1="42" x2="41" y2="42" stroke="#262143" stroke-width="2.5"/>
+            <path d="M38 53C39.5 54.5 40.5 54.5 42 53" stroke="#262143" stroke-width="2" stroke-linecap="round"/>
+            <path d="M22 78C22 68 30 64 40 64C50 64 58 68 58 78H22Z" fill="#fff"/>
+          </svg>
+        </div>
+        <div class="peer-name">Michael Kopfler</div>
+        <div class="peer-role">Sales Representative</div>
+        <div class="peer-loc">
+          <div class="peer-loc-line">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5-2.5 2.5z"/>
+            </svg>
+            Berlin,
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 9: 1 Apr -->
+      <div class="peer-card">
+        <div class="date-badge">
+          <div class="date-num">1</div>
+          <div class="date-month">Apr</div>
+        </div>
+        <div class="avatar-box">
+          <svg width="54" height="54" viewBox="0 0 80 80" fill="none">
+            <path d="M24 30C24 20 31 16 40 16C49 16 56 20 56 30V40H24V30Z" fill="#1b1735"/>
+            <path d="M28 36C28 28 33 24 40 24C47 24 52 28 52 36V54C52 60 47 64 40 64C33 64 28 60 28 54V36Z" fill="#ffdfbb"/>
+            <circle cx="35" cy="42" r="2.2" fill="#1b1735"/>
+            <circle cx="45" cy="42" r="2.2" fill="#1b1735"/>
+            <path d="M38 52C39.5 53.5 40.5 53.5 42 52" stroke="#1b1735" stroke-width="2" stroke-linecap="round"/>
+            <path d="M22 78C22 68 30 64 40 64C50 64 58 68 58 78H22Z" fill="#fff"/>
+          </svg>
+        </div>
+        <div class="peer-name">Tom Cruise</div>
+        <div class="peer-role">Professional Actor</div>
+        <div class="peer-loc">
+          <div class="peer-loc-line">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5-2.5 2.5z"/>
+            </svg>
+            Kyiv,
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- RIGHT LEADERBOARD SIDEBAR -->
+  <aside class="leaderboard">
+    <div class="podium-section">
+      <div class="leaderboard-header">
+        <svg class="trophy-splash" viewBox="0 0 120 100" fill="none">
+          <path d="M25 55C15 45 10 30 25 22C35 15 40 28 48 30C55 32 60 22 70 24C78 26 72 38 65 42C58 46 62 52 52 56C42 60 35 65 25 55Z" fill="#ff6ea2"/>
+          <circle cx="18" cy="18" r="3" fill="#ff6ea2"/>
+          <circle cx="10" cy="32" r="2.5" fill="#ff6ea2"/>
+          <circle cx="68" cy="12" r="3.5" fill="#ff6ea2"/>
+          <circle cx="82" cy="28" r="2" fill="#ff6ea2"/>
+          <path d="M38 48H66L63 68C63 74 58 78 52 78C46 78 41 74 41 68L38 48Z" fill="#ffdfbb"/>
+          <path d="M48 78H56V88H48V78Z" fill="#ffdfbb"/>
+          <path d="M42 88H62V92H42V88Z" fill="#ffdfbb"/>
+          <path d="M38 52C32 52 30 58 32 64C34 68 38 68 39 68" stroke="#ffdfbb" stroke-width="3" stroke-linecap="round"/>
+          <path d="M66 52C72 52 74 58 72 64C70 68 66 68 65 68" stroke="#ffdfbb" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+
+        <div class="leaderboard-title">Leaderboard</div>
+      </div>
+
+      <!-- Podiums -->
+      <div class="podium-grid">
+        <!-- Rank 2 -->
+        <div class="podium-col rank-2">
+          <div class="podium-percent">96 %</div>
+          <div class="rank-star">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="#ff769f">
+              <path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7-6-3.3-6 3.3 1.3-6.7-5-4.7 6.8-.8z"/>
+            </svg>
+            <span class="rank-num">2</span>
+          </div>
+          <div class="podium-block">
+            <div class="podium-avatar">
+              <svg width="30" height="30" viewBox="0 0 80 80" fill="none">
+                <path d="M26 38C26 30 32 24 40 24C48 24 54 30 54 38V54C54 60 48 64 40 64C32 64 26 60 26 54V38Z" fill="#ffdfbb"/>
+                <circle cx="34" cy="42" r="2.5" fill="#1b1735"/>
+                <circle cx="46" cy="42" r="2.5" fill="#1b1735"/>
+                <path d="M38 52C39.5 53.5 40.5 53.5 42 52" stroke="#1b1735" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="podium-name">Alice<br>Koller</div>
+          </div>
+        </div>
+
+        <!-- Rank 1 -->
+        <div class="podium-col rank-1">
+          <div class="podium-percent">100 %</div>
+          <div class="rank-star">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="#ff769f">
+              <path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7-6-3.3-6 3.3 1.3-6.7-5-4.7 6.8-.8z"/>
+            </svg>
+            <span class="rank-num">1</span>
+          </div>
+          <div class="podium-block">
+            <div class="podium-avatar">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M5 19V5L19 19V5" stroke="#201938" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="podium-name">Nikitin<br>Bogdan</div>
+          </div>
+        </div>
+
+        <!-- Rank 3 -->
+        <div class="podium-col rank-3">
+          <div class="podium-percent">88 %</div>
+          <div class="rank-star">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="#ff769f">
+              <path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7-6-3.3-6 3.3 1.3-6.7-5-4.7 6.8-.8z"/>
+            </svg>
+            <span class="rank-num">3</span>
+          </div>
+          <div class="podium-block">
+            <div class="podium-avatar">
+              <svg width="30" height="30" viewBox="0 0 80 80" fill="none">
+                <path d="M28 36C28 28 33 24 40 24C47 24 52 28 52 36V54C52 60 47 64 40 64C33 64 28 60 28 54V36Z" fill="#ffdfbb"/>
+                <circle cx="34" cy="42" r="4.5" stroke="#262143" stroke-width="2" fill="none"/>
+                <circle cx="46" cy="42" r="4.5" stroke="#262143" stroke-width="2" fill="none"/>
+                <circle cx="34" cy="42" r="1.5" fill="#262143"/>
+                <circle cx="46" cy="42" r="1.5" fill="#262143"/>
+              </svg>
+            </div>
+            <div class="podium-name">Peter<br>Din</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard List -->
+    <div class="leaderboard-list">
+      <div class="list-row">
+        <div class="list-left">
+          <div class="star-rank-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#362c5a">
+              <path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7-6-3.3-6 3.3 1.3-6.7-5-4.7 6.8-.8z"/>
+            </svg>
+            <span>4</span>
+          </div>
+          <span class="list-name">John Doe</span>
+        </div>
+        <span class="list-score">75 %</span>
+      </div>
+
+      <div class="list-row">
+        <div class="list-left">
+          <div class="star-rank-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#362c5a">
+              <path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7-6-3.3-6 3.3 1.3-6.7-5-4.7 6.8-.8z"/>
+            </svg>
+            <span>5</span>
+          </div>
+          <span class="list-name">Michael Kopfler</span>
+        </div>
+        <span class="list-score">73 %</span>
+      </div>
+
+      <div class="list-row">
+        <div class="list-left">
+          <div class="star-rank-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#362c5a">
+              <path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7-6-3.3-6 3.3 1.3-6.7-5-4.7 6.8-.8z"/>
+            </svg>
+            <span>6</span>
+          </div>
+          <span class="list-name">Alice Koller</span>
+        </div>
+        <span class="list-score">40 %</span>
+      </div>
+
+      <div class="list-row">
+        <div class="list-left">
+          <div class="star-rank-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#362c5a">
+              <path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7-6-3.3-6 3.3 1.3-6.7-5-4.7 6.8-.8z"/>
+            </svg>
+            <span>7</span>
+          </div>
+          <span class="list-name">George Limbof</span>
+        </div>
+        <span class="list-score">32 %</span>
+      </div>
+
+      <div class="list-row">
+        <div class="list-left">
+          <div class="star-rank-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#362c5a">
+              <path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7-6-3.3-6 3.3 1.3-6.7-5-4.7 6.8-.8z"/>
+            </svg>
+            <span>8</span>
+          </div>
+          <span class="list-name">John Doe</span>
+        </div>
+        <span class="list-score">20 %</span>
+      </div>
+
+      <div class="list-row">
+        <div class="list-left">
+          <div class="star-rank-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#362c5a">
+              <path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7-6-3.3-6 3.3 1.3-6.7-5-4.7 6.8-.8z"/>
+            </svg>
+            <span>9</span>
+          </div>
+          <span class="list-name">Michael Kopfler</span>
+        </div>
+        <span class="list-score">19 %</span>
+      </div>
+
+      <div class="list-row">
+        <div class="list-left">
+          <div class="star-rank-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#362c5a">
+              <path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7-6-3.3-6 3.3 1.3-6.7-5-4.7 6.8-.8z"/>
+            </svg>
+            <span>10</span>
+          </div>
+          <span class="list-name">Alice Koller</span>
+        </div>
+        <span class="list-score">15 %</span>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>
